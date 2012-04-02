@@ -52,11 +52,11 @@ module Heimdallr
 
         case controller.params[:action]
         when 'new', 'create'
-          unless value.reflect_on_security.operations.include? :create
+          unless value.reflect_on_security[:operations].include? :create
             raise Heimdallr::AccessDenied, "Cannot create model"
           end
         when 'edit', 'update'
-          unless value.reflect_on_security.operations.include? :update
+          unless value.reflect_on_security[:operations].include? :update
             raise Heimdallr::AccessDenied, "Cannot update model"
           end
         end
