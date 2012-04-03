@@ -5,7 +5,7 @@ module Heimdallr
   module ResourceImplementation
     class << self
       def prepare_options(klass, resource, options)
-        options.merge! :resource => (resource || klass.name.to_s.underscore)
+        options.merge! :resource => (resource || klass.name.sub(/Controller$/, '').underscore)
 
         filter_options = {}
         filter_options[:only]   = options.delete(:only)   if options.has_key?(:only)
@@ -25,7 +25,7 @@ module Heimdallr
                           send(:"#{options[:resource].pluralize}")
             end
           else
-            scope = options[:resource].constantize.scoped
+            scope = options[:resource].camelize.constantize.scoped
           end
 
           case controller.params[:action]
@@ -77,7 +77,7 @@ module Heimdallr
     extend ActiveSupport::Concern
 
     module ClassMethods
-      def load_and_authorize_resource(resource, options={})
+      def load_and_authorize_resource(resource=nil, options={})
         load_resource(resource, options)
         authorize_resource(resource, options)
       end
