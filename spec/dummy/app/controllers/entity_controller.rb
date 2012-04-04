@@ -12,8 +12,6 @@ class EntityController < ApplicationController
   end
 
   def create
-    @entity.update_attributes!(params[:entity])
-
     render :nothing => true
   end
 
@@ -22,14 +20,10 @@ class EntityController < ApplicationController
   end
 
   def update
-    @entity.update_attributes!(params[:entity])
-
     render :nothing => true
   end
 
   def destroy
-    @entity.delete
-
     render :nothing => true
   end
 end
