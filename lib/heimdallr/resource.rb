@@ -59,6 +59,10 @@ module Heimdallr
           unless value.reflect_on_security[:operations].include? :update
             raise Heimdallr::AccessDenied, "Cannot update model"
           end
+        when 'destroy'
+          unless value.destroyable?
+            raise Heimdallr::AccessDenied, "Cannot delete model"
+          end
         end
       end
 
