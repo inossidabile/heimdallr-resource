@@ -46,7 +46,8 @@ The checks are performed for `new`, `create`, `edit` and `update` actions.
 License
 -------
 
-    Copyright (C) 2012  Peter Zotov <whitequark@whitequark.org>
+    Copyright (C) 2012  Peter Zotov <whitequark@whitequark.org>,
+                        Boris Staal <boris@roundlake.ru>.
   
     Funded by Round Lake.
 

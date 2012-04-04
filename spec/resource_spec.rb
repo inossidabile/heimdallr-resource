@@ -5,8 +5,8 @@ describe EntityController, :type => :controller do
     @john    = User.create!   :admin => false
     @maria   = User.create!   :admin => false
     @admin   = User.create!   :admin => true
-    @public  = Entity.create! :name => 'ent1', :public => false
-    @private = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
+    @private = Entity.create! :name => 'ent1', :public => false
+    @public  = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
   end
 
   describe "shows everything to admin" do
