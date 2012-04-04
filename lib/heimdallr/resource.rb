@@ -32,12 +32,12 @@ module Heimdallr
           when 'index'
             controller.instance_variable_set(ivar_name(controller, options), scope)
           when 'new', 'create'
-            controller.instance_variable_set(ivar_name(controller, options,
-                scope.new(controller.params[options[:resource]])))
+            controller.instance_variable_set(ivar_name(controller, options),
+                scope.new(controller.params[options[:resource]]))
           when 'show', 'edit', 'update', 'destroy'
-            controller.instance_variable_set(ivar_name(controller, options,
+            controller.instance_variable_set(ivar_name(controller, options),
                 scope.find(controller.params[:"#{options[:resource]}_id"] ||
-                           controller.params[:id])))
+                           controller.params[:id]))
           end
         end
       end

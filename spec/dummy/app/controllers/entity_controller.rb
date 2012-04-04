@@ -12,7 +12,7 @@ class EntityController < ApplicationController
   end
 
   def create
-    @entity.create!(params[:entity])
+    @entity.update_attributes!(params[:entity])
 
     render :nothing => true
   end
