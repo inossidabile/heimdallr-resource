@@ -46,12 +46,12 @@ The checks are performed for `new`, `create`, `edit` and `update` actions.
 Credits
 -------
 
-Peter Zotov ([@whitequark](http://twitter.com/#!/whitequark))
-Boris Staal ([@_inossidabile](http://twitter.com/#!/_inossidabile))
+<img src="http://roundlake.ru/assets/logo.png" align="right" />
 
-()[!roundlake.ru/assets/logo.png]
+* Peter Zotov ([@whitequark](http://twitter.com/#!/whitequark))
+* Boris Staal ([@_inossidabile](http://twitter.com/#!/_inossidabile))
 
 LICENSE
 -------
 
-It is free software, and may be redistributed under the terms specified in the LICENSE file.
+It is free software, and may be redistributed under the terms of MIT license.
