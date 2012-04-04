@@ -3,11 +3,7 @@ class User < ActiveRecord::Base
     attr_accessor :current
   end
 
-  def self.mock(what)
-    if what == :admin
-      @current = User.new(admin: true)
-    else
-      @current = User.new(admin: false)
-    end
+  def self.mock(user)
+    @current = user
   end
 end
