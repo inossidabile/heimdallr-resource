@@ -9,8 +9,8 @@ describe EntityController, :type => :controller do
     @public  = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
   end
 
-  describe "shows everything to admin" do
-    it "showws everything to the admin" do
+  describe "CRUD" do
+    it "shows everything to the admin" do
       User.mock @admin
       get :index
 
@@ -38,36 +38,36 @@ describe EntityController, :type => :controller do
 
     it "allows update for admin" do
       User.mock @admin
-      post :update, {:id => 1}
+      post :update, {:id => @private.id}
 
       assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == 1
+      assigns(:entity).id.should == @private.id
     end
 
     it "disallows update for non-admin" do
       User.mock @john
-      expect { post :update, {:id => 2} }.should raise_error
+      expect { post :update, {:id => @public.id} }.should raise_error
     end
 
     it "allows destroy for admin" do
       User.mock @admin
-      post :destroy, {:id => 1}
+      post :destroy, {:id => @private.id}
 
       assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == 1
+      assigns(:entity).id.should == @private.id
     end
 
     it "allows destroy for owner" do
       User.mock @john
-      post :destroy, {:id => 2}
+      post :destroy, {:id => @public.id}
 
       assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == 2
+      assigns(:entity).id.should == @public.id
     end
 
     it "disallows destroy for nobody" do
       User.mock @maria
-      expect { post :destroy, {:id => 2} }.should raise_error
+      expect { post :destroy, {:id => @public.id} }.should raise_error
     end
   end
 end

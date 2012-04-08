@@ -4,8 +4,8 @@ module Heimdallr
 
   module ResourceImplementation
     class << self
-      def prepare_options(klass, resource, options)
-        options.merge! :resource => (resource || klass.name.sub(/Controller$/, '').underscore)
+      def prepare_options(klass, options)
+        options.merge! :resource => (options[:resource] || klass.name.sub(/Controller$/, '').underscore).to_s
 
         filter_options = {}
         filter_options[:only]   = options.delete(:only)   if options.has_key?(:only)
@@ -81,21 +81,21 @@ module Heimdallr
     extend ActiveSupport::Concern
 
     module ClassMethods
-      def load_and_authorize_resource(resource=nil, options={})
-        load_resource(resource, options)
-        authorize_resource(resource, options)
+      def load_and_authorize_resource(options={})
+        load_resource(options)
+        authorize_resource(options)
       end
 
-      def load_resource(resource=nil, options={})
-        options, filter_options = Heimdallr::ResourceImplementation.prepare_options(self, resource, options)
+      def load_resource(options={})
+        options, filter_options = Heimdallr::ResourceImplementation.prepare_options(self, options)
 
         before_filter filter_options do |controller|
           Heimdallr::ResourceImplementation.load(controller, options)
         end
       end
 
-      def authorize_resource(resource=nil, options={})
-        options, filter_options = Heimdallr::ResourceImplementation.prepare_options(self, resource, options)
+      def authorize_resource(options={})
+        options, filter_options = Heimdallr::ResourceImplementation.prepare_options(self, options)
 
         before_filter filter_options do |controller|
           Heimdallr::ResourceImplementation.authorize(controller, options)
