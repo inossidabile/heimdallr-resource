@@ -28,16 +28,38 @@ module Heimdallr
             scope = options[:resource].camelize.constantize.scoped
           end
 
-          case controller.params[:action]
-          when 'index'
+          load_collection = -> {
             controller.instance_variable_set(ivar_name(controller, options), scope)
-          when 'new', 'create'
+          }
+
+          load_new_record = -> {
             controller.instance_variable_set(ivar_name(controller, options),
                 scope.new(controller.params[options[:resource]]))
-          when 'show', 'edit', 'update', 'destroy'
+          }
+
+          load_record = -> {
             controller.instance_variable_set(ivar_name(controller, options),
                 scope.find(controller.params[:"#{options[:resource]}_id"] ||
                            controller.params[:id]))
+          }
+
+          action = controller.params[:action]
+
+          case action
+          when 'index'
+            load_collection.()
+          when 'new', 'create'
+            load_new_record.()
+          when 'show', 'edit', 'update', 'destroy'
+            load_record.()
+          else
+            if options[:collection] && options[:collection].include?(action)
+              load_collection.()
+            elsif options[:new] && options[:new].include?(action)
+              load_new_record.()
+            else
+              load_record.()
+            end
           end
         end
       end
