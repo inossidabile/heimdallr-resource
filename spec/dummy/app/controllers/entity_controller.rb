@@ -26,4 +26,8 @@ class EntityController < ApplicationController
   def destroy
     render :nothing => true
   end
+
+  def penetrate
+    render :nothing => true
+  end
 end

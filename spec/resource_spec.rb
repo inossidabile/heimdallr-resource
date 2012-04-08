@@ -69,5 +69,13 @@ describe EntityController, :type => :controller do
       User.mock @maria
       expect { post :destroy, {:id => @public.id} }.should raise_error
     end
+
+    it "assigns the custom methods" do
+      User.mock @john
+      post :penetrate, {:id => @public.id}
+
+      assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
+      assigns(:entity).id.should == @public.id
+    end
   end
 end
