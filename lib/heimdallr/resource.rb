@@ -28,39 +28,24 @@ module Heimdallr
             scope = options[:resource].camelize.constantize.scoped
           end
 
-          load_collection = -> {
-            controller.instance_variable_set(ivar_name(controller, options), scope)
+          loaders = {
+            collection: -> {
+              controller.instance_variable_set(ivar_name(controller, options), scope)
+            },
+
+            new_record: -> {
+              controller.instance_variable_set(ivar_name(controller, options),
+                  scope.new(controller.params[options[:resource]]))
+            },
+
+            record: -> {
+              controller.instance_variable_set(ivar_name(controller, options),
+                  scope.find(controller.params[:"#{options[:resource]}_id"] ||
+                             controller.params[:id]))
+            }
           }
 
-          load_new_record = -> {
-            controller.instance_variable_set(ivar_name(controller, options),
-                scope.new(controller.params[options[:resource]]))
-          }
-
-          load_record = -> {
-            controller.instance_variable_set(ivar_name(controller, options),
-                scope.find(controller.params[:"#{options[:resource]}_id"] ||
-                           controller.params[:id]))
-          }
-
-          action = controller.params[:action]
-
-          case action
-          when 'index'
-            load_collection.()
-          when 'new', 'create'
-            load_new_record.()
-          when 'show', 'edit', 'update', 'destroy'
-            load_record.()
-          else
-            if options[:collection] && options[:collection].include?(action)
-              load_collection.()
-            elsif options[:new] && options[:new].include?(action)
-              load_new_record.()
-            else
-              load_record.()
-            end
-          end
+          loaders[action_type(controller.params[:action], options)].()
         end
       end
 
@@ -89,10 +74,30 @@ module Heimdallr
       end
 
       def ivar_name(controller, options)
-        if controller.params[:action] == 'index'
+        if action_type(controller.params[:action], options) == :collection
           :"@#{options[:resource].pluralize}"
         else
           :"@#{options[:resource]}"
+        end
+      end
+
+      def action_type(action, options)
+        action = action.to_sym
+        case action
+        when :index
+          :collection
+        when :new, :create
+          :new_record
+        when :show, :edit, :update, :destroy
+          :record
+        else
+          if options[:collection] && options[:collection].include?(action)
+            :collection
+          elsif options[:new] && options[:new].include?(action)
+            :new_record
+          else
+            :record
+          end
         end
       end
     end
