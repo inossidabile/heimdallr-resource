@@ -5,7 +5,7 @@ module Heimdallr
   module ResourceImplementation
     class << self
       def prepare_options(klass, options)
-        options.merge! :resource => (options[:resource] || klass.name.sub(/Controller$/, '').underscore).to_s
+        options = options.merge :resource => (options[:resource] || klass.name.sub(/Controller$/, '').underscore).to_s
 
         filter_options = {}
         filter_options[:only]   = options.delete(:only)   if options.has_key?(:only)
