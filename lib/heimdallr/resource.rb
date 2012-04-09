@@ -17,19 +17,19 @@ module Heimdallr
       def load(controller, options)
         unless controller.instance_variable_defined?(ivar_name(controller, options))
           if options.has_key? :through
-            if options[:singleton]
-              scope = controller.instance_variable_get(:"@#{options[:through]}").
-                          send(:"#{options[:resource]}")
+            target = Array.wrap(options[:through]).map do |parent|
+              controller.instance_variable_get(:"@#{parent}")
+            end.reject(&:nil?).first
+            if target
+              if options[:singleton]
+                scope = target.send(:"#{options[:resource]}")
+              else
+                scope = target.send(:"#{options[:resource].pluralize}")
+              end
+            elsif options[:shallow]
+              scope = options[:resource].camelize.constantize.scoped
             else
-              scope = controller.instance_variable_get(:"@#{options[:through]}").
-                          send(:"#{options[:resource].pluralize}")
-            end
-          elsif options.has_key?(:try_through) && (parent = Array.wrap(options[:try_through])
-              .map{|p| controller.instance_variable_get(:"@#{p}") }.reject(&:nil?).first)
-            if options[:singleton]
-              scope = parent.send(:"#{options[:resource]}")
-            else
-              scope = parent.send(:"#{options[:resource].pluralize}")
+              raise "Cannot fetch #{options[:resource]} via #{options[:through]}"
             end
           else
             scope = options[:resource].camelize.constantize.scoped
