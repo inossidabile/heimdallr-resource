@@ -24,6 +24,12 @@ module Heimdallr
               scope = controller.instance_variable_get(:"@#{options[:through]}").
                           send(:"#{options[:resource].pluralize}")
             end
+          elsif options.has_key?(:try_through) && (parent = controller.instance_variable_get(:"@#{options[:try_through]}"))
+            if options[:singleton]
+              scope = parent.send(:"#{options[:resource]}")
+            else
+              scope = parent.send(:"#{options[:resource].pluralize}")
+            end
           else
             scope = options[:resource].camelize.constantize.scoped
           end
@@ -42,6 +48,13 @@ module Heimdallr
               controller.instance_variable_set(ivar_name(controller, options),
                   scope.find(controller.params[:"#{options[:resource]}_id"] ||
                              controller.params[:id]))
+            },
+
+            related_record: -> {
+              if controller.params[:"#{options[:resource]}_id"]
+                controller.instance_variable_set(ivar_name(controller, options),
+                    scope.find(controller.params[:"#{options[:resource]}_id"]))
+              end
             }
           }
 
@@ -50,12 +63,16 @@ module Heimdallr
       end
 
       def authorize(controller, options)
-        controller.instance_variable_set(ivar_name(controller, options.merge(:insecure => true)),
-            controller.instance_variable_get(ivar_name(controller, options)))
+        value = controller.instance_variable_get(ivar_name(controller, options))
+        return unless value
 
-        value = controller.instance_variable_get(ivar_name(controller, options)).
-              restrict(controller.security_context)
-        controller.instance_variable_set(ivar_name(controller, options), value)
+        controller.instance_variable_set(ivar_name(controller, options.merge(:insecure => true)), value)
+
+        # TODO: make #restrict handle this case more adequately
+        unless value.class.name.start_with? 'Heimdallr::Proxy'
+          value = value.restrict(controller.security_context)
+          controller.instance_variable_set(ivar_name(controller, options), value)
+        end
 
         case controller.params[:action]
         when 'new', 'create'
@@ -82,21 +99,25 @@ module Heimdallr
       end
 
       def action_type(action, options)
-        action = action.to_sym
-        case action
-        when :index
-          :collection
-        when :new, :create
-          :new_record
-        when :show, :edit, :update, :destroy
-          :record
+        if options[:related]
+          :related_record
         else
-          if options[:collection] && options[:collection].include?(action)
+          action = action.to_sym
+          case action
+          when :index
             :collection
-          elsif options[:new] && options[:new].include?(action)
+          when :new, :create
             :new_record
-          else
+          when :show, :edit, :update, :destroy
             :record
+          else
+            if options[:collection] && options[:collection].include?(action)
+              :collection
+            elsif options[:new] && options[:new].include?(action)
+              :new_record
+            else
+              :record
+            end
           end
         end
       end
