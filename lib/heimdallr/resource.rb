@@ -24,7 +24,8 @@ module Heimdallr
               scope = controller.instance_variable_get(:"@#{options[:through]}").
                           send(:"#{options[:resource].pluralize}")
             end
-          elsif options.has_key?(:try_through) && (parent = controller.instance_variable_get(:"@#{options[:try_through]}"))
+          elsif options.has_key?(:try_through) && (parent = Array.wrap(options[:try_through])
+              .map{|p| controller.instance_variable_get(:"@#{p}") }.reject(&:nil?).first)
             if options[:singleton]
               scope = parent.send(:"#{options[:resource]}")
             else
