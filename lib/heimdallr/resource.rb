@@ -75,13 +75,19 @@ module Heimdallr
 
         case controller.params[:action]
         when 'new', 'create'
+          value.assign_attributes(value.reflect_on_security[:restrictions].fixtures[:create])
+
           unless value.reflect_on_security[:operations].include? :create
             raise Heimdallr::AccessDenied, "Cannot create model"
           end
+
         when 'edit', 'update'
+          value.assign_attributes(value.reflect_on_security[:restrictions].fixtures[:update])
+
           unless value.reflect_on_security[:operations].include? :update
             raise Heimdallr::AccessDenied, "Cannot update model"
           end
+
         when 'destroy'
           unless value.destroyable?
             raise Heimdallr::AccessDenied, "Cannot delete model"
@@ -124,7 +130,8 @@ module Heimdallr
   end
 
   # {Resource} is a mixin providing CanCan-like interface for Rails controllers.
-  module Resource extend ActiveSupport::Concern
+  module Resource
+    extend ActiveSupport::Concern
 
     module ClassMethods
       def load_and_authorize_resource(options={})
