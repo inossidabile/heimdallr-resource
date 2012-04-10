@@ -93,9 +93,9 @@ module Heimdallr
 
       def ivar_name(controller, options)
         if action_type(controller.params[:action], options) == :collection
-          :"@#{options[:resource].pluralize}"
+          :"@#{options[:resource].pluralize.gsub('/', '_')}"
         else
-          :"@#{options[:resource]}"
+          :"@#{options[:resource].gsub('/', '_')}"
         end
       end
 
