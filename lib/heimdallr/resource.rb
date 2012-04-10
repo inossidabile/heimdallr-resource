@@ -22,17 +22,17 @@ module Heimdallr
             end.reject(&:nil?).first
             if target
               if options[:singleton]
-                scope = target.send(:"#{options[:resource]}")
+                scope = target.send(:"#{options[:resource].parameterize('_')}")
               else
-                scope = target.send(:"#{options[:resource].pluralize}")
+                scope = target.send(:"#{options[:resource].parameterize('_').pluralize}")
               end
             elsif options[:shallow]
-              scope = options[:resource].camelize.constantize.scoped
+              scope = options[:resource].classify.constantize.scoped
             else
               raise "Cannot fetch #{options[:resource]} via #{options[:through]}"
             end
           else
-            scope = options[:resource].camelize.constantize.scoped
+            scope = options[:resource].classify.constantize.scoped
           end
 
           loaders = {
@@ -93,9 +93,9 @@ module Heimdallr
 
       def ivar_name(controller, options)
         if action_type(controller.params[:action], options) == :collection
-          :"@#{options[:resource].pluralize.gsub('/', '_')}"
+          :"@#{options[:resource].parameterize('_').pluralize}"
         else
-          :"@#{options[:resource].gsub('/', '_')}"
+          :"@#{options[:resource].parameterize('_')}"
         end
       end
 
