@@ -41,7 +41,7 @@ module Heimdallr
 
             new_record: -> {
               controller.instance_variable_set(ivar_name(controller, options),
-                  scope.new(controller.params[options[:resource]]))
+                  scope.new(controller.params[options[:resource].split('/').last]))
             },
 
             record: -> {
