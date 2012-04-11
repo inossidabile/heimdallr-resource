@@ -17,9 +17,7 @@ module Heimdallr
       def load(controller, options)
         unless controller.instance_variable_defined?(ivar_name(controller, options))
           if options.has_key? :through
-            target = Array.wrap(options[:through]).map do |parent|
-              controller.instance_variable_get(:"@#{parent}")
-            end.reject(&:nil?).first
+            target = load_target(controller, options)
 
             if target
               if options[:singleton]
@@ -92,7 +90,21 @@ module Heimdallr
           unless value.destroyable?
             raise Heimdallr::AccessDenied, "Cannot delete model"
           end
-        end
+        end unless options[:related]
+      end
+
+      def load_target(controller, options)
+        Array.wrap(options[:through]).map do |parent|
+          loaded = controller.instance_variable_get(:"@#{parent}")
+          unless loaded
+            load(controller, :resource => parent.to_s, :related => true)
+            loaded = controller.instance_variable_get(:"@#{parent}")
+          end
+          if loaded && options[:authorize_chain]
+            authorize(controller, :resource => parent.to_s, :related => true)
+          end
+          controller.instance_variable_get(:"@#{parent}")
+        end.reject(&:nil?).first
       end
 
       def ivar_name(controller, options)
@@ -135,6 +147,7 @@ module Heimdallr
 
     module ClassMethods
       def load_and_authorize_resource(options={})
+        options[:authorize_chain] = true
         load_resource(options)
         authorize_resource(options)
       end
