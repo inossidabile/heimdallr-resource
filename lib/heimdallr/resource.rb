@@ -21,17 +21,17 @@ module Heimdallr
 
             if target
               if options[:singleton]
-                scope = target.send(:"#{options[:resource].parameterize('_')}")
+                scope = target.send(:"#{variable_name(options)}")
               else
-                scope = target.send(:"#{options[:resource].parameterize('_').pluralize}")
+                scope = target.send(:"#{variable_name(options).pluralize}")
               end
             elsif options[:shallow]
-              scope = options[:resource].classify.constantize.scoped
+              scope = class_name(options).constantize.scoped
             else
               raise "Cannot fetch #{options[:resource]} via #{options[:through]}"
             end
           else
-            scope = options[:resource].classify.constantize.scoped
+            scope = class_name(options).constantize.scoped
           end
 
           loaders = {
@@ -41,19 +41,19 @@ module Heimdallr
 
             new_record: -> {
               controller.instance_variable_set(ivar_name(controller, options),
-                  scope.new(controller.params[options[:resource].split('/').last]))
+                  scope.new(controller.params[params_key_name(options)]))
             },
 
             record: -> {
               controller.instance_variable_set(ivar_name(controller, options),
-                  scope.find(controller.params[:"#{options[:resource]}_id"] ||
+                  scope.find(controller.params[:"#{params_key_name(options)}_id"] ||
                              controller.params[:id]))
             },
 
             related_record: -> {
-              if controller.params[:"#{options[:resource]}_id"]
+              if controller.params[:"#{params_key_name(options)}_id"]
                 controller.instance_variable_set(ivar_name(controller, options),
-                    scope.find(controller.params[:"#{options[:resource]}_id"]))
+                    scope.find(controller.params[:"#{params_key_name(options)}_id"]))
               end
             }
           }
@@ -109,9 +109,9 @@ module Heimdallr
 
       def ivar_name(controller, options)
         if action_type(controller.params[:action], options) == :collection
-          :"@#{options[:resource].parameterize('_').pluralize}"
+          :"@#{variable_name(options).pluralize}"
         else
-          :"@#{options[:resource].parameterize('_')}"
+          :"@#{variable_name(options)}"
         end
       end
 
@@ -137,6 +137,18 @@ module Heimdallr
             end
           end
         end
+      end
+
+      def variable_name(options)
+        options[:resource].parameterize('_')
+      end
+
+      def class_name(options)
+        options[:resource].classify
+      end
+
+      def params_key_name(options)
+        options[:resource].split('/').last
       end
     end
   end
