@@ -95,15 +95,15 @@ module Heimdallr
 
       def load_target(controller, options)
         Array.wrap(options[:through]).map do |parent|
-          loaded = controller.instance_variable_get(:"@#{parent}")
+          loaded = controller.instance_variable_get(:"@#{variable_name parent}")
           unless loaded
             load(controller, :resource => parent.to_s, :related => true)
-            loaded = controller.instance_variable_get(:"@#{parent}")
+            loaded = controller.instance_variable_get(:"@#{variable_name parent}")
           end
           if loaded && options[:authorize_chain]
             authorize(controller, :resource => parent.to_s, :related => true)
           end
-          controller.instance_variable_get(:"@#{parent}")
+          controller.instance_variable_get(:"@#{variable_name parent}")
         end.reject(&:nil?).first
       end
 
@@ -140,15 +140,27 @@ module Heimdallr
       end
 
       def variable_name(options)
-        options[:resource].parameterize('_')
+        if options.kind_of? Hash
+          options[:resource]
+        else
+          options.to_s
+        end.parameterize('_')
       end
 
       def class_name(options)
-        options[:resource].classify
+        if options.kind_of? Hash
+          options[:resource]
+        else
+          options.to_s
+        end.classify
       end
 
       def params_key_name(options)
-        options[:resource].split('/').last
+        if options.kind_of? Hash
+          options[:resource]
+        else
+          options.to_s
+        end.split('/').last
       end
     end
   end
