@@ -40,20 +40,25 @@ module Heimdallr
             },
 
             new_record: -> {
-              controller.instance_variable_set(ivar_name(controller, options),
-                  scope.new(controller.params[params_key_name(options)]))
+              controller.instance_variable_set(
+                ivar_name(controller, options),
+                scope.new(controller.params[params_key_name(options)])
+              )
             },
 
             record: -> {
-              controller.instance_variable_set(ivar_name(controller, options),
-                  scope.find(controller.params[:"#{params_key_name(options)}_id"] ||
-                             controller.params[:id]))
+              controller.instance_variable_set(
+                ivar_name(controller, options),
+                scope.find([:"#{params_key_name(options)}_id", :id].map{|key| controller.params[key] }.reject(&:blank?)[0])
+              )
             },
 
             related_record: -> {
-              if controller.params[:"#{params_key_name(options)}_id"]
-                controller.instance_variable_set(ivar_name(controller, options),
-                    scope.find(controller.params[:"#{params_key_name(options)}_id"]))
+              unless controller.params[:"#{params_key_name(options)}_id"].blank?
+                controller.instance_variable_set(
+                  ivar_name(controller, options),
+                  scope.find(controller.params[:"#{params_key_name(options)}_id"])
+                )
               end
             }
           }
