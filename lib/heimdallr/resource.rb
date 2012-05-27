@@ -42,7 +42,7 @@ module Heimdallr
             new_record: -> {
               controller.instance_variable_set(
                 ivar_name(controller, options),
-                scope.new(controller.params[params_key_name(options)])
+                scope.new(controller.params[params_key_name(options)] || {})
               )
             },
 
