@@ -6,6 +6,7 @@ describe EntityController, :type => :controller do
     @maria   = User.create!   :admin => false
     @admin   = User.create!   :admin => true
     @private = Entity.create! :name => 'ent1', :public => false
+    @private_own = Entity.create! :name => 'ent1', :public => false, :owner_id => @john.id
     @public  = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
   end
 
@@ -14,14 +15,27 @@ describe EntityController, :type => :controller do
       User.mock @admin
       get :index
 
-      assigns(:entities).count.should == 2
+      assigns(:entities).count.should == 3
     end
 
     it "hides non-public entities" do
       User.mock @john
       get :index
 
-      assigns(:entities).count.should == 1
+      assigns(:entities).count.should == 2
+    end
+
+    it "shows private to owner" do
+      User.mock @john
+      get :show, {:id => @private_own.id}
+
+      assigns(:entity).insecure.should == @private_own
+    end
+
+    it "hides private from non-owner" do
+      User.mock @maria
+
+      expect { get :show, {:id => @private_own.id} }.should raise_error
     end
 
     it "allows creation for admin" do

@@ -8,12 +8,12 @@ models.
 Overview
 --------
 
-API of Heimdallr Resource basically consists of two methods, `load_resource` and `authorize_resource`.
+API of Heimdallr Resource basically consists of two methods, `load_resource` and `load_and_authorize_resource`.
 Both work by adding a filter in standard Rails filter chain and obey the `:only` and `:except` options.
 
 `load_resource` loads a record or scope and wraps it in a Heimadllr proxy. For `index` action, a scope is loaded. For `show`, `new`, `create`, `edit`, `update` and `destroy` a record is loaded. No further action is performed by Heimdallr Resource.
 
-`authorize_resource` verifies if the current security context allows for creating or updating the records. The checks are performed for `new`, `create`, `edit` and `update` actions. `index` will simply follow the defined `:fetch` scope.
+`load_and_authorize_resource` loads a record and verifies if the current security context allows for creating, updating or destroying the records. The checks are performed for `new`, `create`, `edit`, `update` and `destroy` actions. `index` and `show` will simply follow the defined `:fetch` scope.
 
 ```ruby
 class CricketController < ApplicationController
@@ -70,7 +70,7 @@ Custom methods (besides CRUD)
 By default Heimdallr Resource will consider non-CRUD methods a `:record` methods (like `show`). So it will try to find entity using `params[:id]`. To modify this behavior to make it work like `index` or `create`, you can explicitly define the way it should handle the methods.
 
 ```ruby
-load_and_authorize :collection => [:search], :new_record => [:special_create], :record => [:attack]
+load_and_authorize :collection => [:search], :new_record => [:special_create]
 ```
 
 Inlined resources
@@ -108,6 +108,7 @@ Credits
 
 * Peter Zotov ([@whitequark](http://twitter.com/#!/whitequark))
 * Boris Staal ([@_inossidabile](http://twitter.com/#!/_inossidabile))
+* Alexander Pavlenko ([@Alerticus](http://twitter.com/#!/Alerticus))
 
 LICENSE
 -------

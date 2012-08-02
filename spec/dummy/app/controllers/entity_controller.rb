@@ -7,6 +7,10 @@ class EntityController < ApplicationController
     render :nothing => true
   end
 
+  def show
+    render :nothing => true
+  end
+
   def new
     render :nothing => true
   end
