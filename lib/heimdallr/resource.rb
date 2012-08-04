@@ -38,7 +38,7 @@ module Heimdallr
   module ResourceImplementation
     def self.prepare_options(klass, options)
       options = options.dup
-      options[:resource] = (options[:resource] || klass.name.sub(/Controller$/, '').underscore).to_s
+      options[:resource] = (options[:resource] || klass.name.sub(/Controller$/, '').singularize.underscore).to_s
 
       filter_keys = [
         :only,

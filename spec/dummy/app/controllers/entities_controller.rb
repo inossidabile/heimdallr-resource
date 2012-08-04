@@ -1,4 +1,4 @@
-class EntityController < ApplicationController
+class EntitiesController < ApplicationController
   include Heimdallr::Resource
 
   load_and_authorize_resource
