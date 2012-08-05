@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe EntityController, :type => :controller do
+describe EntitiesController, :type => :controller do
   before(:all) do
     @john    = User.create!   :admin => false
     @maria   = User.create!   :admin => false
@@ -8,6 +8,10 @@ describe EntityController, :type => :controller do
     @private = Entity.create! :name => 'ent1', :public => false
     @private_own = Entity.create! :name => 'ent1', :public => false, :owner_id => @john.id
     @public  = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
+  end
+
+  after(:all) do
+    Entity.delete_all
   end
 
   describe "CRUD" do
