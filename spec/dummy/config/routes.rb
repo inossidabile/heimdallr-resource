@@ -1,5 +1,5 @@
 Dummy::Application.routes.draw do
-  resources :entity do
+  resources :entities do
     member do
       post :penetrate
     end
