@@ -39,7 +39,6 @@ module Heimdallr
     def self.prepare_options(klass, options)
       options = options.dup
       options[:resource] = (options[:resource] || klass.name.sub(/Controller$/, '').singularize.underscore).to_s
-      options[:finder] ||= :find
 
       filter_keys = [
         :only,
@@ -142,7 +141,7 @@ module Heimdallr
           key = [:"#{self.params_key_name(options)}_id", :id].map{|key| controller.params[key] }.find &:present?
           controller.instance_variable_set(
             self.ivar_name(controller, options),
-            scope.send(options[:finder], key)
+            scope.send(options[:finder] || :find, key)
           )
         },
 
@@ -151,7 +150,7 @@ module Heimdallr
           unless key.blank?
             controller.instance_variable_set(
               self.ivar_name(controller, options),
-              scope.send(options[:finder], key)
+              scope.send(options[:finder] || :find, key)
             )
           end
         }
