@@ -2,16 +2,16 @@ require 'spec_helper'
 
 describe EntitiesController, :type => :controller do
   before(:all) do
+    User.delete_all
+    Entity.delete_all
+
     @john    = User.create!   :admin => false
     @maria   = User.create!   :admin => false
     @admin   = User.create!   :admin => true
+    
     @private = Entity.create! :name => 'ent1', :public => false
     @private_own = Entity.create! :name => 'ent1', :public => false, :owner_id => @john.id
     @public  = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
-  end
-
-  after(:all) do
-    Entity.delete_all
   end
 
   describe "CRUD" do
@@ -19,14 +19,14 @@ describe EntitiesController, :type => :controller do
       User.mock @admin
       get :index
 
-      assigns(:entities).count.should == 3
+      assigns(:entities).should have(3).items
     end
 
     it "hides non-public entities" do
       User.mock @john
       get :index
 
-      assigns(:entities).count.should == 2
+      assigns(:entities).should have(2).items
     end
 
     it "shows private to owner" do
@@ -39,7 +39,7 @@ describe EntitiesController, :type => :controller do
     it "hides private from non-owner" do
       User.mock @maria
 
-      expect { get :show, {:id => @private_own.id} }.should raise_error
+      expect { get :show, {:id => @private_own.id} }.to raise_error
     end
 
     it "allows creation for admin" do
@@ -51,7 +51,7 @@ describe EntitiesController, :type => :controller do
 
     it "disallows creation for non-admin" do
       User.mock @john
-      expect { post :create, {} }.should raise_error
+      expect { post :create, {} }.to raise_error
     end
 
     it "allows update for admin" do
@@ -64,7 +64,7 @@ describe EntitiesController, :type => :controller do
 
     it "disallows update for non-admin" do
       User.mock @john
-      expect { post :update, {:id => @public.id} }.should raise_error
+      expect { post :update, {:id => @public.id} }.to raise_error
     end
 
     it "allows destroy for admin" do
@@ -85,7 +85,7 @@ describe EntitiesController, :type => :controller do
 
     it "disallows destroy for nobody" do
       User.mock @maria
-      expect { post :destroy, {:id => @public.id} }.should raise_error
+      expect { post :destroy, {:id => @public.id} }.to raise_error
     end
 
     it "assigns the custom methods" do
