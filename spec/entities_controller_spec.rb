@@ -2,8 +2,8 @@ require 'spec_helper'
 
 describe EntitiesController, :type => :controller do
   before(:all) do
-    User.delete_all
-    Entity.delete_all
+    User.destroy_all
+    Entity.destroy_all
 
     @john    = User.create!   :admin => false
     @maria   = User.create!   :admin => false
