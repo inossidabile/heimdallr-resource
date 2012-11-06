@@ -6,19 +6,11 @@ module Heimdallr
 
     module ClassMethods
       def load_resource(options = {})
-        options, filter_options = Heimdallr::ResourceImplementation.prepare_options self, options
-
-        before_filter filter_options do |controller|
-          Heimdallr::ResourceImplementation.load_resource controller, options
-        end
+        Heimdallr::ResourceImplementation.add_before_filter self, :load_resource, options
       end
 
       def load_and_authorize_resource(options = {})
-        options, filter_options = Heimdallr::ResourceImplementation.prepare_options self, options
-
-        before_filter filter_options do |controller|
-          Heimdallr::ResourceImplementation.load_and_authorize_resource controller, options
-        end
+        Heimdallr::ResourceImplementation.add_before_filter self, :load_and_authorize_resource, options
       end
     end
   end

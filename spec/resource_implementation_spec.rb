@@ -6,74 +6,84 @@ describe Heimdallr::ResourceImplementation do
   let(:entity) { stub!.id{1}.subject }
   before { stub(controller).params { params } }
 
-  describe '.load_resource' do
+  describe '#load_resource' do
     it "loads and assigns the resource to an instance variable for show action" do
       params.merge! :action => 'show', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == entity
     end
 
     it "loads and assigns the resource to an instance variable for edit action" do
       params.merge! :action => 'edit', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == entity
     end
 
     it "loads and assigns the resource to an instance variable for update action" do
       params.merge! :action => 'edit', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == entity
     end
 
     it "loads and assigns the resource to an instance variable for destroy action" do
       params.merge! :action => 'destroy', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == entity
     end
 
     it "builds and assigns a new resource for new action" do
       params.merge! :action => 'new'
       mock(Entity).new({}) { :new_entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == :new_entity
     end
 
     it "builds and assigns a new resource for create action" do
       params.merge! :action => 'create', :entity => {:name => 'foo'}
       mock(Entity).new('name' => 'foo') { :new_entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == :new_entity
     end
 
     it "loads and assigns a resource collection for index action" do
       params.merge! :action => 'index'
       mock(Entity).scoped { :entity_collection }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entities).should == :entity_collection
     end
 
     it "loads and assigns a single resource for custom action by default" do
       params.merge! :action => 'fetch', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == entity
     end
 
     it "loads and assigns a collection for custom action if specified in options" do
       params.merge! :action => 'sort'
       mock(Entity).scoped { :entity_collection }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity', :collection => [:sort]
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity', :collection => [:sort]
+      resource.load_resource
       controller.instance_variable_get(:@entities).should == :entity_collection
     end
 
     it "builds and assigns a new resource for custom action if specified in options" do
       params.merge! :action => 'generate', :entity => {:name => 'foo'}
       mock(Entity).new('name' => 'foo') { :new_entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity', :new_record => [:generate]
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity', :new_record => [:generate]
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == :new_entity
     end
 
@@ -81,7 +91,8 @@ describe Heimdallr::ResourceImplementation do
       params.merge! :action => 'show', :id => entity.id
       controller.instance_variable_set :@entity, :different_entity
       stub(Entity).scoped.stub!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == :different_entity
     end
 
@@ -90,7 +101,8 @@ describe Heimdallr::ResourceImplementation do
       params.merge! :controller => :things, :action => 'show', :entity_id => entity.id, :id => thing.id
       controller.instance_variable_set(:@entity, entity)
       stub(entity).things.mock!.find(thing.id) { thing }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'thing', :through => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@thing).should == thing
     end
 
@@ -98,7 +110,8 @@ describe Heimdallr::ResourceImplementation do
       params.merge! :controller => :things, :action => 'index', :entity_id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
       stub(entity).things
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'thing', :through => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity'
+      resource.load_resource
       controller.instance_variable_get(:@entity).should == entity
     end
 
@@ -106,15 +119,15 @@ describe Heimdallr::ResourceImplementation do
       thing = stub!.id{1}.subject
       params.merge! :controller => :things, :action => 'show', :id => thing.id
       stub(Thing).scoped.mock!.find(thing.id) { thing }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'thing', :through => 'entity', :shallow => true
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :shallow => true
+      resource.load_resource
       controller.instance_variable_get(:@thing).should == thing
     end
 
     it "raises an error when the parent's id is not provided" do
       params.merge! :controller => :things, :action => 'show', :id => 1
-      expect {
-        Heimdallr::ResourceImplementation.load_resource controller, :resource => 'thing', :through => 'entity'
-      }.to raise_error(RuntimeError)
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity'
+      expect { resource.load_resource }.to raise_error(RuntimeError)
     end
 
     it "loads through the first parent found when multiple are given" do
@@ -125,7 +138,8 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_set(:@entity, entity)
       controller.instance_variable_set(:@user, Object.new)
       stub(entity).things.mock!.find(thing.id) { thing }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'thing', :through => [:nothing, :entity, :user]
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => [:nothing, :entity, :user]
+      resource.load_resource
       controller.instance_variable_get(:@thing).should == thing
     end
 
@@ -134,7 +148,8 @@ describe Heimdallr::ResourceImplementation do
       params.merge! :controller => :things, :action => 'show', :id => thing.id
       controller.instance_variable_set(:@entity, entity)
       mock(entity).thing { thing }
-      Heimdallr::ResourceImplementation.load_resource controller, :resource => 'thing', :through => 'entity', :singleton => true
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true
+      resource.load_resource
       controller.instance_variable_get(:@thing).should == thing
     end
 
@@ -145,7 +160,7 @@ describe Heimdallr::ResourceImplementation do
     it "loads through custom association if :through_association option is provided"
   end
 
-  describe '.load_and_authorize_resource' do
+  describe '#load_and_authorize_resource' do
     let(:user) { stub!.id{1}.subject }
     before do
       stub(user).admin { false }
@@ -155,7 +170,8 @@ describe Heimdallr::ResourceImplementation do
     it "calls #restrict on the loaded resource" do
       params.merge! :action => 'show', :id => entity.id
       mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
-      Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_and_authorize_resource
     end
 
     it "raises AccessDenied when calling :new action for resource that can't be created" do
@@ -163,9 +179,8 @@ describe Heimdallr::ResourceImplementation do
       mock(Entity).new.mock!.restrict(controller.security_context, {}) { entity }
       stub(entity).assign_attributes
       mock(entity).creatable? { false }
-      expect {
-        Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
-      }.to raise_error(Heimdallr::AccessDenied)
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when creating a resource that can't be created" do
@@ -173,27 +188,24 @@ describe Heimdallr::ResourceImplementation do
       mock(Entity).new.mock!.restrict(controller.security_context, {}) { entity }
       stub(entity).assign_attributes
       mock(entity).creatable? { false }
-      expect {
-        Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
-      }.to raise_error(Heimdallr::AccessDenied)
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when calling :edit action for resource that can't be updated" do
       params.merge! :action => 'edit', :id => entity.id
       mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
       mock(entity).modifiable? { false }
-      expect {
-        Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
-      }.to raise_error(Heimdallr::AccessDenied)
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when updating a resource that can't be updated" do
       params.merge! :action => 'update', :id => entity.id
       mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
       mock(entity).modifiable? { false }
-      expect {
-        Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
-      }.to raise_error(Heimdallr::AccessDenied)
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "fixes certain attributes of a new resource" do
@@ -204,7 +216,8 @@ describe Heimdallr::ResourceImplementation do
       mock(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
       stub(entity).assign_attributes('name' => 'foo')
       mock(entity).assign_attributes(fixtures[:create])
-      Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_and_authorize_resource
       controller.instance_variable_get(:@entity) == entity
     end
 
@@ -216,7 +229,8 @@ describe Heimdallr::ResourceImplementation do
       mock(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
       stub(entity).assign_attributes('name' => 'foo')
       mock(entity).assign_attributes(fixtures[:update])
-      Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      resource.load_and_authorize_resource
       controller.instance_variable_get(:@entity) == entity
     end
 
@@ -224,9 +238,8 @@ describe Heimdallr::ResourceImplementation do
       params.merge! :action => 'destroy', :id => entity.id
       mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
       mock(entity).destroyable? { false }
-      expect {
-        Heimdallr::ResourceImplementation.load_and_authorize_resource controller, :resource => 'entity'
-      }.to raise_error(Heimdallr::AccessDenied)
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
   end
 end

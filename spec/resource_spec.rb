@@ -11,7 +11,7 @@ describe Heimdallr::Resource do
   context "#load_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      mock(Heimdallr::ResourceImplementation).load_resource(controller, :resource => 'entity')
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
       controller_class.load_resource :resource => :entity
     end
   end
@@ -19,7 +19,7 @@ describe Heimdallr::Resource do
   context "#load_and_authorize_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      mock(Heimdallr::ResourceImplementation).load_and_authorize_resource(controller, :resource => 'entity')
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_and_authorize_resource
       controller_class.load_and_authorize_resource :resource => :entity
     end
   end

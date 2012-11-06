@@ -1,8 +1,18 @@
 module Heimdallr
-  module ResourceImplementation
-    def self.prepare_options(klass, options)
+  class ResourceImplementation
+    def self.add_before_filter(controller_class, method, options)
+      options, filter_options = Heimdallr::ResourceImplementation.prepare_options controller_class, options
+
+      controller_class.class_eval do
+        before_filter filter_options do |controller|
+          Heimdallr::ResourceImplementation.new(controller, options).send(method)
+        end
+      end
+    end
+
+    def self.prepare_options(controller_class, options)
       options = options.dup
-      options[:resource] = (options[:resource] || klass.name.sub(/Controller$/, '').singularize.underscore).to_s
+      options[:resource] = (options[:resource] || controller_class.name.sub(/Controller$/, '').singularize.underscore).to_s
 
       filter_keys = [
         :only,
@@ -17,74 +27,73 @@ module Heimdallr
         hash
       end
 
-      [ options, filter_options ]
+      [options, filter_options]
     end
 
-    def self.load_resource(controller, options)
-      load_scoped controller, options
+    def initialize(controller, options)
+      @controller = controller
+      @options = options
+      @params = controller.params
     end
 
-    def self.load_and_authorize_resource(controller, options)
-      load_restricted controller, options
-      authorize_resource controller, options
+    def load_resource
+      load_scoped @options
     end
 
-    def self.load_scoped(controller, options)
-      return if controller.instance_variable_defined? self.ivar_name(controller, options)
-
-      scope = self.class_name(options).constantize.scoped
-      self.load controller, options, scope, :load_scoped
+    def load_and_authorize_resource
+      load_restricted @options
+      authorize_resource
     end
 
-    def self.load_restricted(controller, options)
-      return if controller.instance_variable_defined? self.ivar_name(controller, options)
+    def load_scoped(options)
+      return if @controller.instance_variable_defined? ivar_name(options)
 
-      scope = self.class_name(options).constantize.restrict(controller.security_context)
-      self.load controller, options, scope, :load_restricted
+      scope = class_name(options).constantize.scoped
+      load options, scope, :load_scoped
     end
 
-    def self.authorize_resource(controller, options)
-      resource = controller.instance_variable_get self.ivar_name(controller, options)
+    def load_restricted(options)
+      return if @controller.instance_variable_defined? ivar_name(options)
 
-      case controller.params[:action]
-      when 'new', 'create'
-        unless resource.creatable?
-          raise Heimdallr::AccessDenied, "Cannot create model"
-        end
-        resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:create]
+      scope = class_name(options).constantize.restrict(@controller.security_context)
+      load options, scope, :load_restricted
+    end
 
-      when 'edit', 'update'
-        unless resource.modifiable?
-          raise Heimdallr::AccessDenied, "Cannot update model"
-        end
-        resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:update]
+    def authorize_resource
+      resource = @controller.instance_variable_get ivar_name(@options)
 
-      when 'destroy'
-        unless resource.destroyable?
-          raise Heimdallr::AccessDenied, "Cannot delete model"
-        end
+      case @params[:action]
+        when 'new', 'create'
+          raise Heimdallr::AccessDenied, "Cannot create model" unless resource.creatable?
+          resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:create]
+
+        when 'edit', 'update'
+          raise Heimdallr::AccessDenied, "Cannot update model" unless resource.modifiable?
+          resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:update]
+
+        when 'destroy'
+          raise Heimdallr::AccessDenied, "Cannot delete model" unless resource.destroyable?
       end
 
       nil
     end
 
-    def self.load(controller, options, base_scope, caller)
+    def load(options, base_scope, caller)
       if options.has_key? :through
         target = Array.wrap(options[:through]).map { |parent|
-          loaded = controller.instance_variable_get(:"@#{self.variable_name(parent)}")
+          loaded = @controller.instance_variable_get(:"@#{variable_name(parent)}")
           unless loaded
-            self.send caller, controller, {:resource => parent.to_s, :related => true}
-            loaded = controller.instance_variable_get(:"@#{self.variable_name(parent)}")
+            self.send caller, :resource => parent.to_s, :related => true
+            loaded = @controller.instance_variable_get(:"@#{variable_name(parent)}")
           end
-
           loaded
         }.reject(&:nil?).first
 
         if target
           if options[:singleton]
-            scope = target.send :"#{self.variable_name(options)}"
+            scope = target.send :"#{variable_name(options)}"
           else
-            scope = target.send :"#{self.variable_name(options).pluralize}"
+            scope = target.send :"#{variable_name(options).pluralize}"
           end
         elsif options[:shallow]
           scope = base_scope
@@ -97,76 +106,76 @@ module Heimdallr
 
       loaders = {
         collection: -> {
-          controller.instance_variable_set(
-            self.ivar_name(controller, options),
+          @controller.instance_variable_set(
+            ivar_name(options),
             scope
           )
         },
 
         new_record: -> {
-          controller.instance_variable_set(
-            self.ivar_name(controller, options),
-            scope.new(controller.params[self.params_key_name(options)] || {})
+          @controller.instance_variable_set(
+            ivar_name(options),
+            scope.new(@params[params_key_name(options)] || {})
           )
         },
 
         record: -> {
-          key = [:"#{self.params_key_name(options)}_id", :id].map{|key| controller.params[key] }.find &:present?
-          controller.instance_variable_set(
-            self.ivar_name(controller, options),
+          key = [:"#{params_key_name(options)}_id", :id].map{|key| @params[key] }.find &:present?
+          @controller.instance_variable_set(
+            ivar_name(options),
             scope.send(options[:finder] || :find, key)
           )
         },
 
         related_record: -> {
-          key = controller.params[:"#{self.params_key_name(options)}_id"]
+          key = @params[:"#{params_key_name(options)}_id"]
           unless key.blank?
-            controller.instance_variable_set(
-              self.ivar_name(controller, options),
+            @controller.instance_variable_set(
+              ivar_name(options),
               scope.send(options[:finder] || :find, key)
             )
           end
         }
       }
 
-      loaders[self.action_type(controller.params[:action], options)].()
+      loaders[action_type(options)].()
 
       nil
     end
 
-    def self.action_type(action, options)
+    def action_type(options)
       if options[:related]
         :related_record
       else
-        action = action.to_sym
+        action = @params[:action].to_sym
         case action
-        when :index
-          :collection
-        when :new, :create
-          :new_record
-        when :show, :edit, :update, :destroy
-          :record
-        else
-          if options[:collection] && options[:collection].include?(action)
+          when :index
             :collection
-          elsif options[:new_record] && options[:new_record].include?(action)
+          when :new, :create
             :new_record
-          else
+          when :show, :edit, :update, :destroy
             :record
-          end
+          else
+            if options[:collection] && options[:collection].include?(action)
+              :collection
+            elsif options[:new_record] && options[:new_record].include?(action)
+              :new_record
+            else
+              :record
+            end
         end
       end
     end
 
-    def self.ivar_name(controller, options)
-      if action_type(controller.params[:action], options) == :collection
-        :"@#{self.variable_name(options).pluralize}"
+    def ivar_name(options)
+      if action_type(options) == :collection
+        :"@#{variable_name(options).pluralize}"
       else
-        :"@#{self.variable_name(options)}"
+        :"@#{variable_name(options)}"
       end
     end
 
-    def self.resource_name(options)
+    def resource_name(options)
       if options.kind_of? Hash
         options[:resource]
       else
@@ -174,15 +183,15 @@ module Heimdallr
       end
     end
 
-    def self.variable_name(options)
+    def variable_name(options)
       resource_name(options).parameterize('_')
     end
 
-    def self.class_name(options)
+    def class_name(options)
       resource_name(options).classify
     end
 
-    def self.params_key_name(options)
+    def params_key_name(options)
       resource_name(options).split('/').last
     end
   end
