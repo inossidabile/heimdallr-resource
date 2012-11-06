@@ -84,7 +84,9 @@ module Heimdallr
         }.reject(&:nil?).first
 
         if target
-          if @options[:singleton]
+          if @options[:through_association]
+            scope = target.send @options[:through_association]
+          elsif @options[:singleton]
             scope = target.send :"#{variable_name(resource)}"
           else
             scope = target.send :"#{variable_name(resource).pluralize}"

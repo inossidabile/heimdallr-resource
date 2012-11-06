@@ -157,7 +157,15 @@ describe Heimdallr::ResourceImplementation do
     it "should find record through has_one association with :singleton and :shallow options"
     it "should build record through has_one association with :singleton and :shallow options"
 
-    it "loads through custom association if :through_association option is provided"
+    it "loads through custom association if :through_association option is provided" do
+      thing = stub!.id{1}.subject
+      params.merge! :controller => :things, :action => 'show', :entity_id => entity.id, :id => thing.id
+      controller.instance_variable_set(:@entity, entity)
+      stub(entity).stuff.mock!.find(thing.id) { thing }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :through_association => :stuff
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == thing
+    end
   end
 
   describe '#load_and_authorize_resource' do
