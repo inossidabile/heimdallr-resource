@@ -10,7 +10,7 @@ module Heimdallr
         self.own_heimdallr_options = options
 
         before_filter filter_options do |controller|
-          Heimdallr::ResourceImplementation.load controller, options
+          Heimdallr::ResourceImplementation.load_resource controller, options
         end
       end
 
@@ -19,7 +19,7 @@ module Heimdallr
         self.own_heimdallr_options = options
 
         before_filter filter_options do |controller|
-          Heimdallr::ResourceImplementation.load_and_authorize controller, options
+          Heimdallr::ResourceImplementation.load_and_authorize_resource controller, options
         end
       end
 
@@ -56,21 +56,30 @@ module Heimdallr
       [ options, filter_options ]
     end
 
-    def self.load(controller, options)
+    def self.load_resource(controller, options)
+      load_scoped controller, options
+    end
+
+    def self.load_and_authorize_resource(controller, options)
+      load_restricted controller, options
+      authorize_resource controller, options
+    end
+
+    def self.load_scoped(controller, options)
       return if controller.instance_variable_defined? self.ivar_name(controller, options)
 
       scope = self.class_name(options).constantize.scoped
-      self.__load controller, options, scope, :load
+      self.load controller, options, scope, :load_scoped
     end
 
-    def self.load_and_authorize(controller, options)
+    def self.load_restricted(controller, options)
       return if controller.instance_variable_defined? self.ivar_name(controller, options)
 
       scope = self.class_name(options).constantize.restrict(controller.security_context)
-      self.__load controller, options, scope, :load_and_authorize
+      self.load controller, options, scope, :load_restricted
+    end
 
-      return if options[:related]
-
+    def self.authorize_resource(controller, options)
       resource = controller.instance_variable_get self.ivar_name(controller, options)
 
       case controller.params[:action]
@@ -95,7 +104,7 @@ module Heimdallr
       nil
     end
 
-    def self.__load(controller, options, base_scope, caller)
+    def self.load(controller, options, base_scope, caller)
       if options.has_key? :through
         target = Array.wrap(options[:through]).map { |parent|
           loaded = controller.instance_variable_get(:"@#{self.variable_name(parent)}")
@@ -193,28 +202,24 @@ module Heimdallr
       end
     end
 
-    def self.variable_name(options)
+    def self.resource_name(options)
       if options.kind_of? Hash
         options[:resource]
       else
         options.to_s
-      end.parameterize('_')
+      end
+    end
+
+    def self.variable_name(options)
+      resource_name(options).parameterize('_')
     end
 
     def self.class_name(options)
-      if options.kind_of? Hash
-        options[:resource]
-      else
-        options.to_s
-      end.classify
+      resource_name(options).classify
     end
 
     def self.params_key_name(options)
-      if options.kind_of? Hash
-        options[:resource]
-      else
-        options.to_s
-      end.split('/').last
+      resource_name(options).split('/').last
     end
   end
 end
