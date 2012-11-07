@@ -20,6 +20,20 @@ describe Heimdallr::Resource do
       stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
       controller_class.load_resource :resource => :entity, :only => [:create, :update]
     end
+
+    it "figures out the resource name based on the controller name" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
+      stub(controller_class).name { 'EntitiesController' }
+      controller_class.load_resource
+    end
+
+    it "figures out the resource name correctly if the controller is namespaced" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'some_project/entity').mock!.load_resource
+      stub(controller_class).name { 'SomeProject::EntitiesController' }
+      controller_class.load_resource
+    end
   end
 
   context "#load_and_authorize_resource" do
