@@ -218,6 +218,14 @@ describe Heimdallr::ResourceImplementation do
       resource.load_resource
       controller.instance_variable_get(:@thing).should == thing
     end
+
+    it "loads and assigns the resource using custom instance name" do
+      params.merge! :action => 'show', :id => entity.id
+      stub(Entity).scoped.mock!.find(entity.id) { entity }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity', :instance_name => :something
+      resource.load_resource
+      controller.instance_variable_get(:@something).should == entity
+    end
   end
 
   describe '#load_and_authorize_resource' do
