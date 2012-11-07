@@ -5,7 +5,7 @@ module Heimdallr
 
       controller_class.class_eval do
         before_filter filter_options do |controller|
-          Heimdallr::ResourceImplementation.new(controller, options).send(method)
+          Heimdallr::ResourceImplementation.new(controller, options).send method
         end
       end
     end
@@ -27,157 +27,152 @@ module Heimdallr
     def initialize(controller, options)
       @controller = controller
       @options = options
-      @params = controller.params
     end
 
     def load_resource
-      load_scoped @options[:resource]
+      ResourceLoader.new(@options[:resource], @controller, @options).load
     end
 
     def load_and_authorize_resource
-      load_restricted @options[:resource]
-      authorize_resource
+      resource = ResourceLoader.new(@options[:resource], @controller, @options, :restricted => true).load
+      authorize_resource resource
+      resource
     end
 
-    def load_scoped(resource, related = false)
-      return if @controller.instance_variable_defined? ivar_name(resource, related)
+    def authorize_resource(resource)
+      case @controller.params[:action]
+      when 'new', 'create'
+        raise Heimdallr::AccessDenied, "Cannot create model" unless resource.creatable?
+        resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:create]
 
-      scope = class_name(resource).constantize.scoped
-      load resource, scope, :load_scoped, related
+      when 'edit', 'update'
+        raise Heimdallr::AccessDenied, "Cannot update model" unless resource.modifiable?
+        resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:update]
+
+      when 'destroy'
+        raise Heimdallr::AccessDenied, "Cannot delete model" unless resource.destroyable?
+      end
     end
 
-    def load_restricted(resource, related = false)
-      return if @controller.instance_variable_defined? ivar_name(resource, related)
-
-      scope = class_name(resource).constantize.restrict(@controller.security_context)
-      load resource, scope, :load_restricted, related
-    end
-
-    def authorize_resource
-      resource = @controller.instance_variable_get ivar_name(@options[:resource])
-
-      case @params[:action]
-        when 'new', 'create'
-          raise Heimdallr::AccessDenied, "Cannot create model" unless resource.creatable?
-          resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:create]
-
-        when 'edit', 'update'
-          raise Heimdallr::AccessDenied, "Cannot update model" unless resource.modifiable?
-          resource.assign_attributes resource.reflect_on_security[:restrictions].fixtures[:update]
-
-        when 'destroy'
-          raise Heimdallr::AccessDenied, "Cannot delete model" unless resource.destroyable?
+    class ResourceLoader
+      def initialize(resource, controller, options, loader_options = {})
+        @restricted = loader_options[:restricted]
+        @parent = loader_options[:parent]
+        @resource = resource
+        @controller = controller
+        @options = options
+        @params = controller.params
       end
 
-      return
-    end
+      def load
+        return if @controller.instance_variable_defined? ivar_name
 
-    def load(resource, base_scope, caller, related)
-      if !related && @options.has_key?(:through)
-        target = Array.wrap(@options[:through]).map { |parent|
-          loaded = @controller.instance_variable_get(:"@#{variable_name(parent)}")
-          unless loaded
-            self.send caller, parent, true
-            loaded = @controller.instance_variable_get(:"@#{variable_name(parent)}")
-          end
-          loaded
-        }.reject(&:nil?).first
-
-        if target
-          if @options[:through_association]
-            scope = target.send @options[:through_association]
-          elsif @options[:singleton]
-            scope = target.send :"#{variable_name(resource)}"
-          else
-            scope = target.send :"#{variable_name(resource).pluralize}"
-          end
-        elsif @options[:shallow]
-          scope = base_scope
+        if @restricted
+          base_scope = class_name.constantize.restrict(@controller.security_context)
         else
-          raise "Cannot fetch #{resource} through #{@options[:through]}"
+          base_scope = class_name.constantize.scoped
         end
-      else
-        scope = base_scope
+
+        if !@parent && @options.has_key?(:through)
+          parent_resource = Array.wrap(@options[:through]).map { |parent|
+            r = @controller.instance_variable_get "@#{variable_name parent}"
+            r ||= ResourceLoader.new(parent, @controller, @options, :restricted => @restricted, :parent => true).load
+          }.reject(&:nil?).first
+
+          if parent_resource
+            if @options[:through_association]
+              scope = parent_resource.send @options[:through_association]
+            elsif @options[:singleton]
+              scope = parent_resource.send :"#{variable_name}"
+            else
+              scope = parent_resource.send :"#{variable_name.pluralize}"
+            end
+          elsif @options[:shallow]
+            scope = base_scope
+          else
+            raise "Cannot fetch #{@resource} through #{@options[:through]}"
+          end
+        else
+          scope = base_scope
+        end
+
+        resource = self.send action_type, scope
+        @controller.instance_variable_set ivar_name, resource unless resource.nil?
+        resource
       end
 
-      loaded_resource = self.send(action_type(related), scope, resource, related)
-      @controller.instance_variable_set ivar_name(resource, related), loaded_resource unless loaded_resource.nil?
-
-      return
-    end
-
-    def collection(scope, resource, related)
-      scope
-    end
-
-    def new_record(scope, resource, related)
-      if @options[:singleton] && !@options[:shallow]
-        scope.assign_attributes @params[params_key_name(resource)] || {}
+      def collection(scope)
         scope
-      else
-        scope.new @params[params_key_name(resource)] || {}
       end
-    end
 
-    def record(scope, resource, related)
-      if @options[:singleton] && !@options[:shallow]
-        scope
-      else
-        key = [:"#{params_key_name(resource)}_id", :id].map{|key| @params[key] }.find &:present?
+      def new_resource(scope)
+        if @options[:singleton] && !@options[:shallow]
+          scope.assign_attributes @params[params_key_name] || {}
+          scope
+        else
+          scope.new @params[params_key_name] || {}
+        end
+      end
+
+      def resource(scope)
+        if @options[:singleton] && !@options[:shallow]
+          scope
+        else
+          key = [:"#{params_key_name}_id", :id].map{|key| @params[key] }.find &:present?
+          scope.send(@options[:finder] || :find, key)
+        end
+      end
+
+      def parent_resource(scope)
+        key = @params[:"#{params_key_name}_id"]
+        return if key.blank?
         scope.send(@options[:finder] || :find, key)
       end
-    end
 
-    def related_record(scope, resource, related)
-      key = @params[:"#{params_key_name(resource)}_id"]
-      return nil if key.blank?
-      scope.send(@options[:finder] || :find, key)
-    end
-
-    def action_type(related)
-      if related
-        :related_record
-      else
-        action = @params[:action].to_sym
-        case action
+      def action_type
+        if @parent
+          :parent_resource
+        else
+          case action = @params[:action].to_sym
           when :index
             :collection
           when :new, :create
-            :new_record
+            :new_resource
           when :show, :edit, :update, :destroy
-            :record
+            :resource
           else
             if @options[:collection] && @options[:collection].include?(action)
               :collection
             elsif @options[:new_record] && @options[:new_record].include?(action)
-              :new_record
+              :new_resource
             else
-              :record
+              :resource
             end
+          end
         end
       end
-    end
 
-    def ivar_name(resource, related = false)
-      name = variable_name(resource)
-      name = name.pluralize if action_type(related) == :collection
-      :"@#{name}"
-    end
+      def ivar_name
+        name = variable_name
+        name = name.pluralize if action_type == :collection
+        :"@#{name}"
+      end
 
-    def resource_name(resource = nil)
-      (resource || @options[:resource]).to_s
-    end
+      def resource_name(resource = nil)
+        (resource || @resource).to_s
+      end
 
-    def variable_name(resource = nil)
-      resource_name(resource).parameterize('_')
-    end
+      def variable_name(resource = nil)
+        resource_name(resource).parameterize('_')
+      end
 
-    def class_name(resource = nil)
-      resource_name(resource).classify
-    end
+      def class_name(resource = nil)
+        resource_name(resource).classify
+      end
 
-    def params_key_name(resource = nil)
-      resource_name(resource).split('/').last
+      def params_key_name(resource = nil)
+        resource_name(resource).split('/').last
+      end
     end
   end
 end
