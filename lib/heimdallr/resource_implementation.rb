@@ -69,7 +69,7 @@ module Heimdallr
           raise Heimdallr::AccessDenied, "Cannot delete model" unless resource.destroyable?
       end
 
-      nil
+      return
     end
 
     def load(resource, base_scope, caller, related)
@@ -103,7 +103,7 @@ module Heimdallr
       loaded_resource = self.send(action_type(related), scope, resource, related)
       @controller.instance_variable_set ivar_name(resource, related), loaded_resource unless loaded_resource.nil?
 
-      nil
+      return
     end
 
     def collection(scope, resource, related)
@@ -111,12 +111,21 @@ module Heimdallr
     end
 
     def new_record(scope, resource, related)
-      scope.new(@params[params_key_name(resource)] || {})
+      if @options[:singleton] && !@options[:shallow]
+        scope.assign_attributes @params[params_key_name(resource)] || {}
+        scope
+      else
+        scope.new @params[params_key_name(resource)] || {}
+      end
     end
 
     def record(scope, resource, related)
-      key = [:"#{params_key_name(resource)}_id", :id].map{|key| @params[key] }.find &:present?
-      scope.send(@options[:finder] || :find, key)
+      if @options[:singleton] && !@options[:shallow]
+        scope
+      else
+        key = [:"#{params_key_name(resource)}_id", :id].map{|key| @params[key] }.find &:present?
+        scope.send(@options[:finder] || :find, key)
+      end
     end
 
     def related_record(scope, resource, related)

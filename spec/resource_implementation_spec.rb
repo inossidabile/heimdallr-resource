@@ -63,6 +63,25 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@entities).should == :entity_collection
     end
 
+    it "loads and assigns a namespaced resource" do
+      params.merge! :action => 'show', :id => entity.id
+      module SomeProject
+        class Entity < ::Entity; end
+      end
+      stub(SomeProject::Entity).scoped.mock!.find(entity.id) { entity }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'some_project/entity'
+      resource.load_resource
+      controller.instance_variable_get(:@some_project_entity).should == entity
+    end
+    
+    it "loads the resource with a custom finder" do
+      params.merge! :action => 'show', :id => entity.id
+      stub(Entity).scoped.mock!.find_by_name(entity.id) { entity }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity', :finder => :find_by_name
+      resource.load_resource
+      controller.instance_variable_get(:@entity).should == entity
+    end
+
     it "loads and assigns a single resource for custom action by default" do
       params.merge! :action => 'fetch', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
@@ -143,9 +162,9 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@thing).should == thing
     end
 
-    pending "loads through has_one association with :singleton option" do
+    it "loads through has_one association with :singleton option" do
       thing = stub!.id{1}.subject
-      params.merge! :controller => :things, :action => 'show', :id => thing.id
+      params.merge! :controller => :things, :action => 'show'
       controller.instance_variable_set(:@entity, entity)
       mock(entity).thing { thing }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true
@@ -153,9 +172,42 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@thing).should == thing
     end
 
-    it "should not build record through has_one association with :singleton option because it can cause it to delete it in the database"
-    it "should find record through has_one association with :singleton and :shallow options"
-    it "should build record through has_one association with :singleton and :shallow options"
+    it "doesn't build record through has_one association with :singleton option because it can cause it to delete it in the database" do
+      params.merge! :controller => :things, :action => 'create', :thing => {:name => 'foo'}
+      controller.instance_variable_set(:@entity, entity)
+      thing = stub!.id{1}.subject
+      mock(entity).thing { thing }
+      mock(thing).assign_attributes 'name' => 'foo'
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == thing
+    end
+
+    it "loads through has_one association with :singleton and :shallow options" do
+      thing = stub!.id{1}.subject
+      params.merge! :controller => :things, :action => 'show', :id => thing.id
+      stub(Thing).scoped.mock!.find(thing.id) { thing }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true, :shallow => :true
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == thing
+    end
+
+    it "builds a record through has_one association with :singleton and :shallow options" do
+      params.merge! :controller => :things, :action => 'create', :thing => {:name => 'foo'}
+      stub(Thing).scoped.mock!.new('name' => 'foo') { :new_thing }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true, :shallow => :true
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == :new_thing
+    end
+
+    it "builds a record through has_one association with :singleton and :shallow options even if the parent is present" do
+      params.merge! :controller => :things, :action => 'create', :thing => {:name => 'foo'}
+      controller.instance_variable_set(:@entity, entity)
+      stub(Thing).scoped.mock!.new('name' => 'foo') { :new_thing }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true, :shallow => :true
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == :new_thing
+    end
 
     it "loads through custom association if :through_association option is provided" do
       thing = stub!.id{1}.subject
