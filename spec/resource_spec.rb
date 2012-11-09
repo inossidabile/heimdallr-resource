@@ -8,7 +8,7 @@ describe Heimdallr::Resource do
     stub(controller).params { {} }
   end
 
-  context "#load_resource" do
+  context ".load_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
       stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
@@ -36,7 +36,7 @@ describe Heimdallr::Resource do
     end
   end
 
-  context "#load_and_authorize_resource" do
+  context ".load_and_authorize_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
       stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_and_authorize_resource
@@ -47,6 +47,25 @@ describe Heimdallr::Resource do
       mock(controller_class).before_filter(:except => :index) { |options, block| block.call(controller) }
       stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_and_authorize_resource
       controller_class.load_and_authorize_resource :resource => :entity, :except => :index
+    end
+  end
+
+  context ".skip_authorization_check" do
+    it "sets up a before filter which sets controller's instance variable to true" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      controller_class.skip_authorization_check
+      controller.instance_variable_get(:@_skip_authorization_check).should be_true
+    end
+
+    it "passes options to the filter" do
+      mock(controller_class).before_filter({:only => :show}) { |options, block| block.call(controller) }
+      controller_class.skip_authorization_check :only => :show
+    end
+
+    it "makes #skip_authorization_check? return true" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      controller_class.skip_authorization_check
+      controller.send(:skip_authorization_check?).should be_true
     end
   end
 end

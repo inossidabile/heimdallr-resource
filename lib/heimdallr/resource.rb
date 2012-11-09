@@ -12,6 +12,17 @@ module Heimdallr
       def load_and_authorize_resource(options = {})
         Heimdallr::ResourceImplementation.add_before_filter self, :load_and_authorize_resource, options
       end
+
+      def skip_authorization_check(options = {})
+        before_filter options do |controller|
+          controller.instance_variable_set :@_skip_authorization_check, true
+        end
+      end
+    end
+
+  protected
+    def skip_authorization_check?
+      @_skip_authorization_check
     end
   end
 

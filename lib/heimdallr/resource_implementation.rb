@@ -35,7 +35,7 @@ module Heimdallr
 
     def load_and_authorize_resource
       resource = ResourceLoader.new(@options[:resource], @controller, @options, :restricted => true).load
-      authorize_resource resource
+      authorize_resource resource unless @controller.send :skip_authorization_check?
       resource
     end
 

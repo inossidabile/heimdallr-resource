@@ -4,7 +4,10 @@ describe Heimdallr::ResourceImplementation do
   let(:controller) { Object.new }
   let(:params) { HashWithIndifferentAccess.new :controller => :entities }
   let(:entity) { stub!.id{1}.subject }
-  before { stub(controller).params { params } }
+  before do
+    stub(controller).params { params }
+    stub(controller).skip_authorization_check? { false }
+  end
 
   describe '#load_resource' do
     it "loads and assigns the resource to an instance variable for show action" do
@@ -276,12 +279,20 @@ describe Heimdallr::ResourceImplementation do
       expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
-    it "fixes certain attributes of a new resource" do
+    it "raises AccessDenied when destroying a resource that can't be destroyed" do
+      params.merge! :action => 'destroy', :id => entity.id
+      mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
+      mock(entity).destroyable? { false }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
+    end
+
+    it "fixates certain attributes of a new resource" do
       params.merge! :action => 'new', :entity => {:name => 'foo'}
       mock(Entity).new.mock!.restrict(controller.security_context, {}) { entity }
       mock(entity).creatable? { true }
       fixtures = {:create => {:name => 'bar'}}
-      mock(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
+      stub(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
       stub(entity).assign_attributes('name' => 'foo')
       mock(entity).assign_attributes(fixtures[:create])
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
@@ -289,12 +300,12 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@entity) == entity
     end
 
-    it "fixes certain attributes of an updating resource" do
+    it "fixates certain attributes of an updating resource" do
       params.merge! :action => 'update', :id => entity.id, :entity => {:name => 'foo'}
       mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
       mock(entity).modifiable? { true }
       fixtures = {:update => {:name => 'bar'}}
-      mock(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
+      stub(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
       stub(entity).assign_attributes('name' => 'foo')
       mock(entity).assign_attributes(fixtures[:update])
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
@@ -302,12 +313,29 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@entity) == entity
     end
 
-    it "raises AccessDenied when destroying a resource that can't be destroyed" do
-      params.merge! :action => 'destroy', :id => entity.id
-      mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
-      mock(entity).destroyable? { false }
-      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
-      expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
+    context "when controller.skip_authorization_check? is true" do
+      before { stub(controller).skip_authorization_check? { true } }
+
+      it "doesn't raise AccessDenied" do
+        params.merge! :action => 'destroy', :id => entity.id
+        mock(Entity).restrict(controller.security_context).stub!.find(entity.id) { entity }
+        stub(entity).destroyable? { false }
+        resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+        expect { resource.load_and_authorize_resource }.not_to raise_error(Heimdallr::AccessDenied)
+      end
+
+      it "doesn't fixate attributes" do
+        params.merge! :action => 'new', :entity => {:name => 'foo'}
+        mock(Entity).new.mock!.restrict(controller.security_context, {}) { entity }
+        stub(entity).creatable? { true }
+        fixtures = {:create => {:name => 'bar'}}
+        stub(entity).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
+        stub(entity).assign_attributes('name' => 'foo')
+        dont_allow(entity).assign_attributes(fixtures[:create])
+        resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity'
+        resource.load_and_authorize_resource
+        controller.instance_variable_get(:@entity) == entity
+      end
     end
   end
 end
