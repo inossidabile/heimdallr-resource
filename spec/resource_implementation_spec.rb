@@ -222,12 +222,20 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@thing).should == thing
     end
 
-    it "loads and assigns the resource using custom instance name" do
+    it "loads and assigns a resource using custom instance name" do
       params.merge! :action => 'show', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity', :instance_name => :something
       resource.load_resource
       controller.instance_variable_get(:@something).should == entity
+    end
+
+    it "loads and assigns a resource collection using custom instance name" do
+      params.merge! :action => 'index'
+      mock(Entity).scoped { :entity_collection }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'entity', :instance_name => :something
+      resource.load_resource
+      controller.instance_variable_get(:@somethings).should == :entity_collection
     end
   end
 

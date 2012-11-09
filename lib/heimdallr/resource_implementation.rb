@@ -153,7 +153,7 @@ module Heimdallr
       end
 
       def ivar_name
-        name = @options[:instance_name] || variable_name
+        name = (@options[:instance_name] || variable_name).to_s
         name = name.pluralize if action_type == :collection
         :"@#{name}"
       end
