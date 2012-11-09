@@ -76,7 +76,7 @@ module Heimdallr
         if !@parent && @options.has_key?(:through)
           parent_resource = Array.wrap(@options[:through]).map { |parent|
             r = @controller.instance_variable_get "@#{variable_name parent}"
-            r ||= ResourceLoader.new(parent, @controller, @options, :restricted => @restricted, :parent => true).load
+            r ||= ResourceLoader.new(parent, @controller, {}, :restricted => @restricted, :parent => true).load
           }.reject(&:nil?).first
 
           if parent_resource
