@@ -14,7 +14,7 @@ module Heimdallr
       end
 
       def skip_authorization_check(options = {})
-        before_filter options do |controller|
+        prepend_before_filter options do |controller|
           controller.instance_variable_set :@_skip_authorization_check, true
         end
       end
