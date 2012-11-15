@@ -11,13 +11,13 @@ describe Heimdallr::Resource do
   context ".load_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_resource
       controller_class.load_resource :resource => :entity
     end
 
     it "passes relevant options to the filter" do
       mock(controller_class).before_filter(:only => [:create, :update]) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_resource
       controller_class.load_resource :resource => :entity, :only => [:create, :update]
     end
 
@@ -39,13 +39,13 @@ describe Heimdallr::Resource do
   context ".load_and_authorize_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_and_authorize_resource
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_and_authorize_resource
       controller_class.load_and_authorize_resource :resource => :entity
     end
 
     it "passes relevant options to the filter" do
       mock(controller_class).before_filter(:except => :index) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_and_authorize_resource
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_and_authorize_resource
       controller_class.load_and_authorize_resource :resource => :entity, :except => :index
     end
   end

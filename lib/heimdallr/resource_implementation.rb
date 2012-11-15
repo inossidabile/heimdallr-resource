@@ -12,7 +12,7 @@ module Heimdallr
 
     def self.prepare_options(controller_class, options)
       options = options.dup
-      options[:resource] = (options[:resource] || controller_class.name.sub(/Controller$/, '').singularize.underscore).to_s
+      options[:resource] ||= controller_class.name.sub(/Controller$/, '').singularize.underscore
 
       filter_keys = [:only, :except]
 
@@ -30,11 +30,11 @@ module Heimdallr
     end
 
     def load_resource
-      ResourceLoader.new(@options[:resource], @controller, @options).load
+      ResourceLoader.new(@controller, @options).load
     end
 
     def load_and_authorize_resource
-      resource = ResourceLoader.new(@options[:resource], @controller, @options, :restricted => true).load
+      resource = ResourceLoader.new(@controller, @options, :restricted => true).load
       authorize_resource resource unless @controller.send :skip_authorization_check?
       resource
     end
@@ -55,67 +55,74 @@ module Heimdallr
     end
 
     class ResourceLoader
-      def initialize(resource, controller, options, loader_options = {})
+      def initialize(controller, options, loader_options = {})
         @restricted = loader_options[:restricted]
         @parent = loader_options[:parent]
-        @resource = resource
         @controller = controller
         @options = options
         @params = controller.params
       end
 
       def load
-        return if @controller.instance_variable_defined? ivar_name
-
-        if @restricted
-          base_scope = class_name.constantize.restrict(@controller.security_context)
-        else
-          base_scope = class_name.constantize.scoped
-        end
+        return @controller.instance_variable_get(ivar_name) if @controller.instance_variable_defined? ivar_name
 
         if !@parent && @options.has_key?(:through)
-          parent_resource = Array.wrap(@options[:through]).map { |parent|
-            r = @controller.instance_variable_get "@#{variable_name parent}"
-            r ||= ResourceLoader.new(parent, @controller, {}, :restricted => @restricted, :parent => true).load
-          }.reject(&:nil?).first
-
-          if parent_resource
-            if @options[:through_association]
-              scope = parent_resource.send @options[:through_association]
-            elsif @options[:singleton]
-              scope = parent_resource.send :"#{variable_name}"
-            else
-              scope = parent_resource.send :"#{variable_name.pluralize}"
-            end
-          elsif @options[:shallow]
-            scope = base_scope
-          else
-            raise "Cannot fetch #{@resource} through #{@options[:through]}"
-          end
+          parent_resource = load_parent
+          raise "Cannot fetch #{@options[:resource]} through #{@options[:through]}" unless parent_resource || @options[:shallow]
         else
-          scope = base_scope
+          parent_resource = nil
         end
 
-        resource = self.send action_type, scope
+        resource = self.send action_type, resource_scope(parent_resource), parent_resource
         @controller.instance_variable_set ivar_name, resource unless resource.nil?
         resource
       end
 
-      def collection(scope)
-        scope
+      def load_parent
+        Array.wrap(@options[:through]).map { |parent|
+          ResourceLoader.new(@controller, {:resource => parent}, :restricted => @restricted, :parent => true).load
+        }.reject(&:nil?).first
       end
 
-      def new_resource(scope)
-        if @options[:singleton] && !@options[:shallow]
-          scope.assign_attributes @params[params_key_name] || {}
-          scope
+      def resource_scope(parent_resource)
+        if parent_resource
+          if @options[:through_association]
+            parent_resource.send @options[:through_association]
+          elsif @options[:singleton]
+            parent_resource.send variable_name
+          else
+            parent_resource.send variable_name.pluralize
+          end
         else
-          scope.new @params[params_key_name] || {}
+          if @restricted
+            class_name.constantize.restrict(@controller.security_context)
+          else
+            class_name.constantize.scoped
+          end
         end
       end
 
-      def resource(scope)
-        if @options[:singleton] && !@options[:shallow]
+      def collection(scope, parent_resource)
+        scope
+      end
+
+      def new_resource(scope, parent_resource)
+        attributes = @params[params_key_name] || {}
+
+        if @options[:singleton] && parent_resource.present?
+          if scope.nil?
+            parent_resource.send :"build_#{variable_name}", attributes
+          else
+            scope.assign_attributes attributes
+            scope
+          end
+        else
+          scope.new attributes
+        end
+      end
+
+      def resource(scope, parent_resource)
+        if @options[:singleton] && parent_resource.present?
           scope
         else
           key = [:"#{params_key_name}_id", :id].map{|key| @params[key] }.find &:present?
@@ -123,7 +130,7 @@ module Heimdallr
         end
       end
 
-      def parent_resource(scope)
+      def parent_resource(scope, parent_resource)
         key = @params[:"#{params_key_name}_id"]
         return if key.blank?
         scope.send(@options[:finder] || :find, key)
@@ -158,20 +165,20 @@ module Heimdallr
         :"@#{name}"
       end
 
-      def resource_name(resource = nil)
-        (resource || @resource).to_s
+      def resource_name
+        @options[:resource].to_s
       end
 
-      def variable_name(resource = nil)
-        resource_name(resource).parameterize('_')
+      def variable_name
+        resource_name.parameterize('_')
       end
 
-      def class_name(resource = nil)
-        resource_name(resource).classify
+      def class_name
+        resource_name.classify
       end
 
-      def params_key_name(resource = nil)
-        resource_name(resource).split('/').last
+      def params_key_name
+        resource_name.split('/').last
       end
     end
   end
