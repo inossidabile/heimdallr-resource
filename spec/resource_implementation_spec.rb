@@ -186,6 +186,17 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@thing).should == thing
     end
 
+    it "builds a record with correct method name with :singleton and :through_association options" do
+      params.merge! :controller => :things, :action => 'create', :thing => {:name => 'foo'}
+      controller.instance_variable_set(:@entity, entity)
+      thing = stub!.id{1}.subject
+      stub(entity).stuff { nil }
+      mock(entity).build_stuff('name' => 'foo') { thing }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :singleton => true, :through_association => :stuff
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == thing
+    end
+
     it "doesn't build a record through has_one association with :singleton option if one already exists because it can cause it to delete it in the database" do
       params.merge! :controller => :things, :action => 'create', :thing => {:name => 'foo'}
       controller.instance_variable_set(:@entity, entity)

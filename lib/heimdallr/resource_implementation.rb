@@ -89,9 +89,9 @@ module Heimdallr
           if @options[:through_association]
             parent_resource.send @options[:through_association]
           elsif @options[:singleton]
-            parent_resource.send variable_name
+            parent_resource.send :"#{variable_name}"
           else
-            parent_resource.send variable_name.pluralize
+            parent_resource.send :"#{variable_name.pluralize}"
           end
         else
           if @restricted
@@ -109,9 +109,9 @@ module Heimdallr
       def new_resource(scope, parent_resource)
         attributes = @params[params_key_name] || {}
 
-        if @options[:singleton] && parent_resource.present?
+        if @options[:singleton] && parent_resource
           if scope.nil?
-            parent_resource.send :"build_#{variable_name}", attributes
+            parent_resource.send singleton_builder_name, attributes
           else
             scope.assign_attributes attributes
             scope
@@ -122,7 +122,7 @@ module Heimdallr
       end
 
       def resource(scope, parent_resource)
-        if @options[:singleton] && parent_resource.present?
+        if @options[:singleton] && parent_resource
           scope
         else
           key = [:"#{params_key_name}_id", :id].map{|key| @params[key] }.find &:present?
@@ -179,6 +179,10 @@ module Heimdallr
 
       def params_key_name
         resource_name.split('/').last
+      end
+
+      def singleton_builder_name
+        :"build_#{@options[:through_association] || variable_name}"
       end
     end
   end
