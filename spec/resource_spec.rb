@@ -1,99 +1,71 @@
 require 'spec_helper'
 
-describe EntitiesController, :type => :controller do
-  before(:all) do
-    @john    = User.create!   :admin => false
-    @maria   = User.create!   :admin => false
-    @admin   = User.create!   :admin => true
-    @private = Entity.create! :name => 'ent1', :public => false
-    @private_own = Entity.create! :name => 'ent1', :public => false, :owner_id => @john.id
-    @public  = Entity.create! :name => 'ent1', :public => true, :owner_id => @john.id
+describe Heimdallr::Resource do
+  let(:controller_class) { Class.new }
+  let(:controller) { controller_class.new }
+  before do
+    controller_class.class_eval { include Heimdallr::Resource }
+    stub(controller).params { {} }
   end
 
-  after(:all) do
-    Entity.delete_all
+  context ".load_resource" do
+    it "sets up a before filter which passes the call to ResourceImplementation" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_resource
+      controller_class.load_resource :resource => :entity
+    end
+
+    it "passes relevant options to the filter" do
+      mock(controller_class).before_filter(:only => [:create, :update]) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_resource
+      controller_class.load_resource :resource => :entity, :only => [:create, :update]
+    end
+
+    it "figures out the resource name based on the controller name" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
+      stub(controller_class).name { 'EntitiesController' }
+      controller_class.load_resource
+    end
+
+    it "figures out the resource name correctly if the controller is namespaced" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'some_project/entity').mock!.load_resource
+      stub(controller_class).name { 'SomeProject::EntitiesController' }
+      controller_class.load_resource
+    end
   end
 
-  describe "CRUD" do
-    it "shows everything to the admin" do
-      User.mock @admin
-      get :index
-
-      assigns(:entities).count.should == 3
+  context ".load_and_authorize_resource" do
+    it "sets up a before filter which passes the call to ResourceImplementation" do
+      mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_and_authorize_resource
+      controller_class.load_and_authorize_resource :resource => :entity
     end
 
-    it "hides non-public entities" do
-      User.mock @john
-      get :index
+    it "passes relevant options to the filter" do
+      mock(controller_class).before_filter(:except => :index) { |options, block| block.call(controller) }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_and_authorize_resource
+      controller_class.load_and_authorize_resource :resource => :entity, :except => :index
+    end
+  end
 
-      assigns(:entities).count.should == 2
+  context ".skip_authorization_check" do
+    it "prepends a before filter which sets controller's instance variable to true" do
+      mock(controller_class).prepend_before_filter({}) { |options, block| block.call(controller) }
+      controller_class.skip_authorization_check
+      controller.instance_variable_get(:@_skip_authorization_check).should be_true
     end
 
-    it "shows private to owner" do
-      User.mock @john
-      get :show, {:id => @private_own.id}
-
-      assigns(:entity).insecure.should == @private_own
+    it "passes options to the filter" do
+      mock(controller_class).prepend_before_filter({:only => :show}) { |options, block| block.call(controller) }
+      controller_class.skip_authorization_check :only => :show
     end
 
-    it "hides private from non-owner" do
-      User.mock @maria
-
-      expect { get :show, {:id => @private_own.id} }.should raise_error
-    end
-
-    it "allows creation for admin" do
-      User.mock @admin
-      post :create, {}
-
-      assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-    end
-
-    it "disallows creation for non-admin" do
-      User.mock @john
-      expect { post :create, {} }.should raise_error
-    end
-
-    it "allows update for admin" do
-      User.mock @admin
-      post :update, {:id => @private.id}
-
-      assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == @private.id
-    end
-
-    it "disallows update for non-admin" do
-      User.mock @john
-      expect { post :update, {:id => @public.id} }.should raise_error
-    end
-
-    it "allows destroy for admin" do
-      User.mock @admin
-      post :destroy, {:id => @private.id}
-
-      assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == @private.id
-    end
-
-    it "allows destroy for owner" do
-      User.mock @john
-      post :destroy, {:id => @public.id}
-
-      assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == @public.id
-    end
-
-    it "disallows destroy for nobody" do
-      User.mock @maria
-      expect { post :destroy, {:id => @public.id} }.should raise_error
-    end
-
-    it "assigns the custom methods" do
-      User.mock @john
-      post :penetrate, {:id => @public.id}
-
-      assigns(:entity).should be_kind_of Heimdallr::Proxy::Record
-      assigns(:entity).id.should == @public.id
+    it "makes #skip_authorization_check? return true" do
+      mock(controller_class).prepend_before_filter({}) { |options, block| block.call(controller) }
+      controller_class.skip_authorization_check
+      controller.send(:skip_authorization_check?).should be_true
     end
   end
 end

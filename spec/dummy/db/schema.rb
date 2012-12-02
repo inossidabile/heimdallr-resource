@@ -5,6 +5,11 @@ ActiveRecord::Schema.define(:version => 1) do
     t.boolean "public"
   end
 
+  create_table "things", :force => true do |t|
+    t.integer "entity_id"
+    t.string  "name"
+  end
+
   create_table "users", :force => true do |t|
     t.boolean "admin"
   end

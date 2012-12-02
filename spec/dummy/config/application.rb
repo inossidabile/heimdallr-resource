@@ -5,7 +5,7 @@ require "rails/all"
 Bundler.require(:default, Rails.env)
 
 require "heimdallr"
-require "heimdallr/resource"
+require "heimdallr-resource"
 
 module Dummy
   class Application < Rails::Application

@@ -1,7 +1,7 @@
-class Entity < ActiveRecord::Base
+class Thing < ActiveRecord::Base
   include Heimdallr::Model
 
-  has_many :things, :dependent => :destroy
+  belongs_to :entity
 
   restrict do |user, record|
     if user.admin
