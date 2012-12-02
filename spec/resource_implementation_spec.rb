@@ -245,6 +245,16 @@ describe Heimdallr::ResourceImplementation do
       controller.instance_variable_get(:@thing).should == thing
     end
 
+    it "loads through custom association if both :through_association and :singleton options are provided" do
+      thing = stub!.id{1}.subject
+      params.merge! :controller => :things, :action => 'show', :entity_id => entity.id, :id => thing.id
+      controller.instance_variable_set(:@entity, entity)
+      mock(entity).stuff { thing }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'thing', :through => 'entity', :through_association => :stuff, :singleton => true
+      resource.load_resource
+      controller.instance_variable_get(:@thing).should == thing
+    end
+
     it "loads and assigns a resource using custom instance name" do
       params.merge! :action => 'show', :id => entity.id
       stub(Entity).scoped.mock!.find(entity.id) { entity }
