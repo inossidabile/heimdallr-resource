@@ -18,6 +18,12 @@ module Heimdallr
           controller.instance_variable_set :@_skip_authorization_check, true
         end
       end
+
+    protected
+      def heimdallr_options=(options)
+        cattr_accessor :heimdallr_options
+        self.heimdallr_options = options
+      end
     end
 
   protected
@@ -28,5 +34,5 @@ module Heimdallr
 
   # {AccessDenied} exception is to be raised when access is denied to an action.
   class AccessDenied < StandardError; end
-
+  
 end
