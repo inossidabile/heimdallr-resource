@@ -20,7 +20,7 @@ module Heimdallr
       end
 
     protected
-      def heimdallr_options=(options)
+      def own_heimdallr_options=(options)
         cattr_accessor :heimdallr_options
         self.heimdallr_options = options
       end

@@ -2,7 +2,7 @@ module Heimdallr
   class ResourceImplementation
     def self.add_before_filter(controller_class, method, options)
       options, filter_options = Heimdallr::ResourceImplementation.prepare_options controller_class, options
-      controller_class.send :heimdallr_options=, options
+      controller_class.send :own_heimdallr_options=, options
 
       controller_class.class_eval do
         before_filter filter_options do |controller|
