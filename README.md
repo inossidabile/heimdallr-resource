@@ -109,7 +109,7 @@ Credits
 * Peter Zotov ([@whitequark](http://twitter.com/whitequark))
 * Boris Staal ([@_inossidabile](http://twitter.com/_inossidabile))
 * Alexander Pavlenko ([@alerticus](https://twitter.com/alerticus))
-* voidseeker ([@voidseeker](https://github.com/voidseeker))
+* Shamil Fattakhov ([@voidseeker](https://github.com/voidseeker))
 
 LICENSE
 -------
