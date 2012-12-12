@@ -1,11 +1,17 @@
 require 'spec_helper'
 
 describe Heimdallr::Resource do
+
   let(:controller_class) { Class.new }
   let(:controller) { controller_class.new }
+
   before do
-    controller_class.class_eval { include Heimdallr::Resource }
-    stub(controller).params { {} }
+    controller_class.class_eval do
+      include Heimdallr::Resource
+      def params
+        {}
+      end
+    end
   end
 
   context ".load_resource" do
@@ -66,6 +72,20 @@ describe Heimdallr::Resource do
       mock(controller_class).prepend_before_filter({}) { |options, block| block.call(controller) }
       controller_class.skip_authorization_check
       controller.send(:skip_authorization_check?).should be_true
+    end
+  end
+
+  context "heimdallr_options" do
+    it "stores options in class attribute" do
+      controller_subclass = Class.new(controller_class)
+      controller_subsubclass = Class.new(controller_subclass)
+      options1 = {:option => 1}
+      options2 = {:option => 2}
+      controller_subclass.send :own_heimdallr_options=, options1
+      controller_subsubclass.send :own_heimdallr_options=, options2
+      controller_subclass.heimdallr_options.should == options1
+      controller_subsubclass.heimdallr_options.should == options2
+      controller_class.respond_to?(:heimdallr_options).should be_false
     end
   end
 end

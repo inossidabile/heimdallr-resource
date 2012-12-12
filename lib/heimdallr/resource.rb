@@ -21,7 +21,9 @@ module Heimdallr
 
     protected
       def own_heimdallr_options=(options)
-        cattr_accessor :heimdallr_options
+        class << self
+          attr_accessor :heimdallr_options
+        end
         self.heimdallr_options = options
       end
     end
