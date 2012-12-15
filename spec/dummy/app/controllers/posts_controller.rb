@@ -1,4 +1,4 @@
-class EntitiesController < ApplicationController
+class PostsController < ApplicationController
   include Heimdallr::Resource
 
   load_and_authorize_resource
@@ -31,7 +31,7 @@ class EntitiesController < ApplicationController
     render :nothing => true
   end
 
-  def penetrate
+  def hide
     render :nothing => true
   end
 end

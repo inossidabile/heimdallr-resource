@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe Heimdallr::Resource do
-
   let(:controller_class) { Class.new }
   let(:controller) { controller_class.new }
 
@@ -17,27 +16,27 @@ describe Heimdallr::Resource do
   context ".load_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_resource
-      controller_class.load_resource :resource => :entity
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :post).mock!.load_resource
+      controller_class.load_resource :resource => :post
     end
 
     it "passes relevant options to the filter" do
       mock(controller_class).before_filter(:only => [:create, :update]) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_resource
-      controller_class.load_resource :resource => :entity, :only => [:create, :update]
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :post).mock!.load_resource
+      controller_class.load_resource :resource => :post, :only => [:create, :update]
     end
 
     it "figures out the resource name based on the controller name" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'entity').mock!.load_resource
-      stub(controller_class).name { 'EntitiesController' }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'post').mock!.load_resource
+      stub(controller_class).name { 'PostsController' }
       controller_class.load_resource
     end
 
     it "figures out the resource name correctly if the controller is namespaced" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'some_project/entity').mock!.load_resource
-      stub(controller_class).name { 'SomeProject::EntitiesController' }
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => 'some_project/post').mock!.load_resource
+      stub(controller_class).name { 'SomeProject::PostsController' }
       controller_class.load_resource
     end
   end
@@ -45,14 +44,14 @@ describe Heimdallr::Resource do
   context ".load_and_authorize_resource" do
     it "sets up a before filter which passes the call to ResourceImplementation" do
       mock(controller_class).before_filter({}) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_and_authorize_resource
-      controller_class.load_and_authorize_resource :resource => :entity
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :post).mock!.load_and_authorize_resource
+      controller_class.load_and_authorize_resource :resource => :post
     end
 
     it "passes relevant options to the filter" do
       mock(controller_class).before_filter(:except => :index) { |options, block| block.call(controller) }
-      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :entity).mock!.load_and_authorize_resource
-      controller_class.load_and_authorize_resource :resource => :entity, :except => :index
+      stub(Heimdallr::ResourceImplementation).new(controller, :resource => :post).mock!.load_and_authorize_resource
+      controller_class.load_and_authorize_resource :resource => :post, :except => :index
     end
   end
 

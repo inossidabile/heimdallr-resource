@@ -6,11 +6,14 @@ describe PostCommentsController, :type => :controller do
     Post.destroy_all
 
     @john = User.create! :admin => false
-    @admin = User.create! :admin => true
 
     @post = Post.create! :title => "Test post", :owner_id => @john.id
     @comment = @post.comments.create! :text => "Test comment"
+    another_post = Post.create! :title => "Another post"
+    another_post.comments.create! :text => "Another post's comment"
   end
+
+  before { User.mock @john }
 
   describe '#index' do
     before { get :index, :post_id => @post.id }
