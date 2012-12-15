@@ -1,7 +1,7 @@
 class BasePostsController < ApplicationController
   include Heimdallr::Resource
 
-  load_and_authorize_resource :resource => :post
+  load_and_authorize_resource :resource => :post, :parent => true
 
   before_filter do
     # This filter could access @post and do something with it in a real app,

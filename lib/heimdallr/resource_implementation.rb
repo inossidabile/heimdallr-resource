@@ -58,7 +58,6 @@ module Heimdallr
     class ResourceLoader
       def initialize(controller, options, loader_options = {})
         @restricted = loader_options[:restricted]
-        @parent = loader_options[:parent]
         @controller = controller
         @options = options
         @params = controller.params
@@ -67,7 +66,7 @@ module Heimdallr
       def load
         return @controller.instance_variable_get(ivar_name) if @controller.instance_variable_defined? ivar_name
 
-        if !@parent && @options.has_key?(:through)
+        if !@options[:parent] && @options.has_key?(:through)
           parent_resource = load_parent
           raise "Cannot fetch #{@options[:resource]} through #{@options[:through]}" unless parent_resource || @options[:shallow]
         else
@@ -81,7 +80,7 @@ module Heimdallr
 
       def load_parent
         Array.wrap(@options[:through]).map { |parent|
-          ResourceLoader.new(@controller, {:resource => parent}, :restricted => @restricted, :parent => true).load
+          ResourceLoader.new(@controller, {:resource => parent, :parent => true}, :restricted => @restricted).load
         }.reject(&:nil?).first
       end
 
@@ -138,7 +137,7 @@ module Heimdallr
       end
 
       def action_type
-        if @parent
+        if @options[:parent]
           :parent_resource
         else
           case action = @params[:action].to_sym
