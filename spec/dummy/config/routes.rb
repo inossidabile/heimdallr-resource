@@ -6,4 +6,8 @@ Dummy::Application.routes.draw do
   end
 
   resources :fluffies
+
+  resources :posts do
+    resources :comments, :controller => :post_comments
+  end
 end
