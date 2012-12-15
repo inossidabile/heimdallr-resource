@@ -31,11 +31,11 @@ module Heimdallr
     end
 
     def load_resource
-      ResourceLoader.new(@controller, @options).load
+      ResourceLoader.new(@controller, false, @options).load
     end
 
     def load_and_authorize_resource
-      resource = ResourceLoader.new(@controller, @options, :restricted => true).load
+      resource = ResourceLoader.new(@controller, true, @options).load
       authorize_resource resource unless @controller.send :skip_authorization_check?
       resource
     end
@@ -56,9 +56,9 @@ module Heimdallr
     end
 
     class ResourceLoader
-      def initialize(controller, options, loader_options = {})
-        @restricted = loader_options[:restricted]
+      def initialize(controller, restricted, options)
         @controller = controller
+        @restricted = restricted
         @options = options
         @params = controller.params
       end
@@ -80,7 +80,7 @@ module Heimdallr
 
       def load_parent
         Array.wrap(@options[:through]).map { |parent|
-          ResourceLoader.new(@controller, {:resource => parent, :parent => true}, :restricted => @restricted).load
+          ResourceLoader.new(@controller, @restricted, :resource => parent, :parent => true).load
         }.reject(&:nil?).first
       end
 
