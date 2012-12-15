@@ -93,4 +93,22 @@ describe PostsController, :type => :controller do
     assigns(:post).should be_kind_of Heimdallr::Proxy::Record
     assigns(:post).id.should == @public.id
   end
+
+  it "still performs authorization if the resource was loaded manually and not restricted" do
+    User.mock @maria
+    controller.instance_variable_set :@post, @private
+
+    expect {
+      post :create, :post => {:title => "Test post"}
+    }.to raise_error(Heimdallr::AccessDenied)
+  end
+
+  it "doesn't perform authorization if the resource was loaded manually and is nil" do
+    User.mock @maria
+    controller.instance_variable_set :@post, nil
+    
+    expect {
+      post :create, :post => {:title => "Test post"}
+    }.not_to raise_error
+  end
 end

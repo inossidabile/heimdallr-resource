@@ -277,6 +277,7 @@ describe Heimdallr::ResourceImplementation do
     before do
       stub(user).admin { false }
       stub(controller).security_context { user }
+      stub(post).restrict { post }
     end
 
     it "calls #restrict on the loaded resource" do

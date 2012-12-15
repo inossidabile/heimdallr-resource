@@ -41,6 +41,8 @@ module Heimdallr
     end
 
     def authorize_resource(resource)
+      return unless resource
+      resource = resource.restrict @controller.security_context
       case @controller.params[:action]
       when 'new', 'create'
         raise Heimdallr::AccessDenied, "Cannot create model" unless resource.creatable?
