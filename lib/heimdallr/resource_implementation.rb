@@ -42,7 +42,7 @@ module Heimdallr
 
     def authorize_resource(resource)
       return unless resource
-      resource = resource.restrict @controller.security_context
+
       case @controller.params[:action]
       when 'new', 'create'
         raise Heimdallr::AccessDenied, "Cannot create model" unless resource.creatable?
@@ -66,7 +66,16 @@ module Heimdallr
       end
 
       def load
-        return @controller.instance_variable_get(ivar_name) if @controller.instance_variable_defined? ivar_name
+        if @controller.instance_variable_defined? ivar_name
+          resource = @controller.instance_variable_get(ivar_name)
+
+          if @restricted && resource
+            resource = resource.restrict @controller.security_context
+            @controller.instance_variable_set ivar_name, resource
+          end
+
+          return resource
+        end
 
         if !@options[:parent] && @options.has_key?(:through)
           parent_resource = load_parent

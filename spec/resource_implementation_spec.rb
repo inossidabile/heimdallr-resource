@@ -274,85 +274,86 @@ describe Heimdallr::ResourceImplementation do
 
   describe '#load_and_authorize_resource' do
     let(:user) { stub!.id{1}.subject }
+    let(:restricted_post) { Object.new }
     before do
       stub(user).admin { false }
       stub(controller).security_context { user }
-      stub(post).restrict { post }
     end
 
-    it "calls #restrict on the loaded resource" do
+    it "restricts the loaded resource" do
       params.merge! :action => 'show', :id => post.id
-      mock(Post).restrict(controller.security_context).stub!.find(post.id) { post }
+      mock(Post).restrict(controller.security_context).stub!.find(post.id) { restricted_post }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       resource.load_and_authorize_resource
+      controller.instance_variable_get(:@post).should == restricted_post
     end
 
     it "raises AccessDenied when calling :new action for resource that can't be created" do
       params.merge! :action => 'new'
-      mock(Post).new.mock!.restrict(controller.security_context, {}) { post }
-      stub(post).assign_attributes
-      mock(post).creatable? { false }
+      mock(Post).new.mock!.restrict(controller.security_context, {}) { restricted_post }
+      stub(restricted_post).assign_attributes
+      mock(restricted_post).creatable? { false }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when creating a resource that can't be created" do
       params.merge! :action => 'create'
-      mock(Post).new.mock!.restrict(controller.security_context, {}) { post }
-      stub(post).assign_attributes
-      mock(post).creatable? { false }
+      mock(Post).new.mock!.restrict(controller.security_context, {}) { restricted_post }
+      stub(restricted_post).assign_attributes
+      mock(restricted_post).creatable? { false }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when calling :edit action for resource that can't be updated" do
       params.merge! :action => 'edit', :id => post.id
-      mock(Post).restrict(controller.security_context).stub!.find(post.id) { post }
-      mock(post).modifiable? { false }
+      mock(Post).restrict(controller.security_context).stub!.find(post.id) { restricted_post }
+      mock(restricted_post).modifiable? { false }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when updating a resource that can't be updated" do
       params.merge! :action => 'update', :id => post.id
-      mock(Post).restrict(controller.security_context).stub!.find(post.id) { post }
-      mock(post).modifiable? { false }
+      mock(Post).restrict(controller.security_context).stub!.find(post.id) { restricted_post }
+      mock(restricted_post).modifiable? { false }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "raises AccessDenied when destroying a resource that can't be destroyed" do
       params.merge! :action => 'destroy', :id => post.id
-      mock(Post).restrict(controller.security_context).stub!.find(post.id) { post }
-      mock(post).destroyable? { false }
+      mock(Post).restrict(controller.security_context).stub!.find(post.id) { restricted_post }
+      mock(restricted_post).destroyable? { false }
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       expect { resource.load_and_authorize_resource }.to raise_error(Heimdallr::AccessDenied)
     end
 
     it "fixates certain attributes of a new resource" do
       params.merge! :action => 'new', :post => {:title => 'foo'}
-      mock(Post).new.mock!.restrict(controller.security_context, {}) { post }
-      mock(post).creatable? { true }
+      mock(Post).new.mock!.restrict(controller.security_context, {}) { restricted_post }
+      mock(restricted_post).creatable? { true }
       fixtures = {:create => {:title => 'bar'}}
-      stub(post).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
-      stub(post).assign_attributes('title' => 'foo')
-      mock(post).assign_attributes(fixtures[:create])
+      stub(restricted_post).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
+      stub(restricted_post).assign_attributes('title' => 'foo')
+      mock(restricted_post).assign_attributes(fixtures[:create])
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       resource.load_and_authorize_resource
-      controller.instance_variable_get(:@post) == post
+      controller.instance_variable_get(:@post).should == restricted_post
     end
 
     it "fixates certain attributes of an updating resource" do
       params.merge! :action => 'update', :id => post.id, :post => {:title => 'foo'}
-      mock(Post).restrict(controller.security_context).stub!.find(post.id) { post }
-      mock(post).modifiable? { true }
+      mock(Post).restrict(controller.security_context).stub!.find(post.id) { restricted_post }
+      mock(restricted_post).modifiable? { true }
       fixtures = {:update => {:title => 'bar'}}
-      stub(post).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
-      stub(post).assign_attributes('title' => 'foo')
-      mock(post).assign_attributes(fixtures[:update])
+      stub(restricted_post).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
+      stub(restricted_post).assign_attributes('title' => 'foo')
+      mock(restricted_post).assign_attributes(fixtures[:update])
       resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
       resource.load_and_authorize_resource
-      controller.instance_variable_get(:@post) == post
+      controller.instance_variable_get(:@post).should == restricted_post
     end
 
     context "when controller.skip_authorization_check? is true" do
@@ -360,24 +361,51 @@ describe Heimdallr::ResourceImplementation do
 
       it "doesn't raise AccessDenied" do
         params.merge! :action => 'destroy', :id => post.id
-        mock(Post).restrict(controller.security_context).stub!.find(post.id) { post }
-        stub(post).destroyable? { false }
+        mock(Post).restrict(controller.security_context).stub!.find(post.id) { restricted_post }
+        stub(restricted_post).destroyable? { false }
         resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
         expect { resource.load_and_authorize_resource }.not_to raise_error(Heimdallr::AccessDenied)
       end
 
       it "doesn't fixate attributes" do
         params.merge! :action => 'new', :post => {:title => 'foo'}
-        mock(Post).new.mock!.restrict(controller.security_context, {}) { post }
-        stub(post).creatable? { true }
+        mock(Post).new.mock!.restrict(controller.security_context, {}) { restricted_post }
+        stub(restricted_post).creatable? { true }
         fixtures = {:create => {:title => 'bar'}}
-        stub(post).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
-        stub(post).assign_attributes('title' => 'foo')
-        dont_allow(post).assign_attributes(fixtures[:create])
+        stub(restricted_post).reflect_on_security { {:restrictions => stub!.fixtures{fixtures}.subject} }
+        stub(restricted_post).assign_attributes('title' => 'foo')
+        dont_allow(restricted_post).assign_attributes(fixtures[:create])
         resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
         resource.load_and_authorize_resource
-        controller.instance_variable_get(:@post) == post
+        controller.instance_variable_get(:@post).should == restricted_post
       end
+    end
+
+    it "doesn't perform authorization if the instance variable was already assigned and is nil" do
+      params.merge! :action => 'destroy', :id => post.id
+      controller.instance_variable_set :@post, nil
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
+      expect { resource.load_and_authorize_resource }.not_to raise_error(Heimdallr::AccessDenied)
+    end
+
+    it "restricts a resource if it was already assigned to an instance variable" do
+      params.merge! :action => 'show', :id => post.id
+      controller.instance_variable_set :@post, post
+      mock(post).restrict(controller.security_context) { restricted_post }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'post'
+      resource.load_and_authorize_resource
+      controller.instance_variable_get(:@post).should == restricted_post
+    end
+
+    it "restricts a parent resource if it was already assigned to an instance variable" do
+      comment = stub!.id{1}.subject
+      params.merge! :controller => :comments, :action => 'show', :post_id => post.id, :id => comment.id
+      controller.instance_variable_set(:@post, post)
+      mock(post).restrict(controller.security_context) { restricted_post }
+      stub(restricted_post).comments.stub!.find(comment.id) { comment }
+      resource = Heimdallr::ResourceImplementation.new controller, :resource => 'comment', :through => 'post'
+      resource.load_and_authorize_resource
+      controller.instance_variable_get(:@post).should == restricted_post
     end
   end
 end
