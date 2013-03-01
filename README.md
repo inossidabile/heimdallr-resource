@@ -5,7 +5,8 @@ Heimdallr Resource is a gem which provides CanCan-like interface for writing sec
 controllers on top of [Heimdallr](http://github.com/roundlake/heimdallr)-protected
 models.
 
-![Travis CI](https://secure.travis-ci.org/roundlake/heimdallr-resource.png)
+[![Travis CI](https://secure.travis-ci.org/roundlake/heimdallr-resource.png)](https://travis-ci.org/roundlake/heimdallr-resource)
+[![Code Climate](https://codeclimate.com/github/inossidabile/heimdallr-resource.png)](https://codeclimate.com/github/inossidabile/heimdallr-resource)
 
 Overview
 --------
