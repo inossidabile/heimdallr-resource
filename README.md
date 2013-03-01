@@ -107,10 +107,8 @@ In the latter case it will work from any route, the direct or inlined one.
 Credits
 -------
 
-<img src="http://roundlake.ru/assets/logo.png" align="right" />
-
-* Peter Zotov ([@whitequark](http://twitter.com/whitequark))
-* Boris Staal ([@_inossidabile](http://twitter.com/_inossidabile))
+* Peter Zotov ([@whitequark](http://twitter.com/whitequark)) [![endorse](http://api.coderwall.com/whitequark/endorsecount.png)](http://coderwall.com/inossidabile)
+* Boris Staal ([@_inossidabile](http://twitter.com/_inossidabile)) [![endorse](http://api.coderwall.com/inossidabile/endorsecount.png)](http://coderwall.com/inossidabile)
 * Alexander Pavlenko ([@alerticus](https://twitter.com/alerticus))
 * Shamil Fattakhov ([@voidseeker](https://github.com/voidseeker))
 
