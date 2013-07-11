@@ -104,15 +104,14 @@ load_and_authorize_resource :through => [:foo, :bar], :shallow => true
 
 In the latter case it will work from any route, the direct or inlined one.
 
-Credits
--------
+Maintainers
+-----------
 
-* Peter Zotov ([@whitequark](http://twitter.com/whitequark)) [![endorse](http://api.coderwall.com/whitequark/endorsecount.png)](http://coderwall.com/inossidabile)
-* Boris Staal ([@_inossidabile](http://twitter.com/_inossidabile)) [![endorse](http://api.coderwall.com/inossidabile/endorsecount.png)](http://coderwall.com/inossidabile)
-* Alexander Pavlenko ([@alerticus](https://twitter.com/alerticus))
-* Shamil Fattakhov ([@voidseeker](https://github.com/voidseeker))
+* Peter Zotov, [@whitequark](http://twitter.com/whitequark)
+* Boris Staal, [@inossidabile](http://staal.io)
+* Shamil Fattakhov, [@voidseeker](https://github.com/voidseeker)
 
-LICENSE
+License
 -------
 
 It is free software, and may be redistributed under the terms of MIT license.
