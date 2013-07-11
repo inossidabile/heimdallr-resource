@@ -15,10 +15,5 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_development_dependency "rspec-rails"
-  s.add_development_dependency "rr"
-  s.add_development_dependency "activerecord"
-  s.add_development_dependency "sqlite3"
-  s.add_development_dependency "tzinfo"
   s.add_runtime_dependency "heimdallr"
 end
