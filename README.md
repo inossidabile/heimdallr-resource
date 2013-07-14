@@ -1,6 +1,8 @@
 Heimdallr Resource
 ==================
 
+**Heimdallr is still supported but is not under development anymore. Please check out its successor – the [Protector](http://github.com/inossidabile/protector) and corresponding [Protector::CanCan](https://github.com/inossidabile/protector-cancan) integration layer.**
+
 Heimdallr Resource is a gem which provides CanCan-like interface for writing secure
 controllers on top of [Heimdallr](http://github.com/roundlake/heimdallr)-protected
 models.
