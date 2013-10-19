@@ -10,7 +10,6 @@ models.
 [![Gem Version](https://badge.fury.io/rb/heimdallr-resource.png)](http://badge.fury.io/rb/heimdallr-resource)
 [![Travis CI](https://secure.travis-ci.org/roundlake/heimdallr-resource.png)](https://travis-ci.org/roundlake/heimdallr-resource)
 [![Code Climate](https://codeclimate.com/github/inossidabile/heimdallr-resource.png)](https://codeclimate.com/github/inossidabile/heimdallr-resource)
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/inossidabile/heimdallr-resource/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 Overview
 --------
@@ -119,3 +118,5 @@ License
 -------
 
 It is free software, and may be redistributed under the terms of MIT license.
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/inossidabile/heimdallr-resource/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
